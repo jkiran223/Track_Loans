@@ -33,6 +33,7 @@ import com.trackloan.ui.viewmodel.TransactionFlowViewModel
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionFlowScreen(
@@ -51,60 +52,78 @@ fun TransactionFlowScreen(
     val scope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Sticky top bar with customer name and summary
-        selectedCustomer?.let { customer ->
-            Surface(
-                tonalElevation = 4.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+        // Top sheet with search and customer details
+        Surface(
+            tonalElevation = 4.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { query -> viewModel.searchCustomers(query) },
+                    label = { Text("Search Customers") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                selectedCustomer?.let { customer ->
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Customer: ${customer.name}",
+                        text = customer.name,
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = "Loans: ${loans.size}",
-                        style = MaterialTheme.typography.bodyMedium
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        customer.mobileNumber?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        customer.address?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Customer list - show only if no customer selected
+        if (selectedCustomer == null) {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(8.dp)
+            ) {
+                items(customers) { customer ->
+                    CustomerListItem(
+                        customer = customer,
+                        isSelected = false,
+                        onClick = { viewModel.selectCustomer(customer) }
                     )
                 }
             }
         }
 
-        // Search field for customers
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { query -> viewModel.searchCustomers(query) },
-            label = { Text("Search Customers") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        )
-
-        // Customer list
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(8.dp)
-        ) {
-            items(customers) { customer ->
-                CustomerListItem(
-                    customer = customer,
-                    isSelected = selectedCustomer?.id == customer.id,
-                    onClick = { viewModel.selectCustomer(customer) }
-                )
-            }
-        }
-
-        // Loan list for selected customer
+        // Loan list for selected customer - use remaining space
         if (selectedCustomer != null) {
             Text(
-                text = "Loans for ${selectedCustomer?.name}",
+                text = "Loans for ${selectedCustomer!!.name}",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(8.dp)
             )
             LazyColumn(
-                modifier = Modifier.weight(2f),
+                modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(8.dp)
             ) {
                 items(loans) { loan ->
@@ -154,8 +173,6 @@ fun TransactionFlowScreen(
             onPaymentSuccess = { viewModel.dismissPaymentBottomSheet() }
         )
     }
-
-    // Transaction bottom sheet can be implemented similarly if needed
 }
 
 @Composable
