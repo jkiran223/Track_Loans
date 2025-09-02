@@ -123,8 +123,16 @@ fun TransactionFlowScreen(
                                 }
                             }
                     ) {
+                        val paidTransactions = viewModel.getTransactionsForLoan(loan.id).filter { it.status == com.trackloan.domain.model.TransactionStatus.PAID }
+                        val paidEmiCount = paidTransactions.size
+                        val totalEmiCount = loan.emiTenure
+                        val progress = if (totalEmiCount > 0) paidEmiCount.toFloat() / totalEmiCount.toFloat() else 0f
+
                         LoanListItem(
                             loan = loan,
+                            paidEmiCount = paidEmiCount,
+                            totalEmiCount = totalEmiCount,
+                            emiProgress = progress,
                             onLoanDetailsClick = {
                                 navController.navigate(NavRoutes.LoanDetail.createRoute(loan.id))
                             },
@@ -198,6 +206,9 @@ fun CustomerListItem(
 @Composable
 fun LoanListItem(
     loan: Loan,
+    paidEmiCount: Int,
+    totalEmiCount: Int,
+    emiProgress: Float,
     onLoanDetailsClick: () -> Unit,
     onLoanClick: () -> Unit
 ) {
@@ -211,15 +222,33 @@ fun LoanListItem(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Loan #${loan.id}",
-                    style = MaterialTheme.typography.titleMedium
+            // Circular Progress Bar on the left
+            Box(
+                modifier = Modifier.size(60.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    progress = { emiProgress },
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    strokeWidth = 4.dp
                 )
                 Text(
-                    text = "Amount: ₹${loan.loanAmount}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "$paidEmiCount of $totalEmiCount",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Summary in the center
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "₹${loan.loanAmount}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "EMI: ₹${loan.emiAmount}",
@@ -227,8 +256,13 @@ fun LoanListItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Button(onClick = onLoanDetailsClick) {
-                Text("Loan Details")
+
+            // Icon-only button on the right
+            IconButton(onClick = onLoanDetailsClick) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Loan Details"
+                )
             }
         }
     }
