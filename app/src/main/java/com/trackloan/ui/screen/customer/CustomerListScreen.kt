@@ -63,15 +63,7 @@ fun CustomerListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Customers") },
-                actions = {
-                    IconButton(onClick = { navController.navigate(NavRoutes.LoanDisbursement.route) }) {
-                        Icon(Icons.Default.AddCard, contentDescription = "Loan Disbursement")
-                    }
-                    IconButton(onClick = { showBottomSheet = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Customer")
-                    }
-                }
+                title = { Text("Customers") }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -96,6 +88,21 @@ fun CustomerListScreen(
                 },
                 singleLine = true
             )
+
+            // Action Buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(onClick = { navController.navigate(NavRoutes.LoanDisbursement.route) }) {
+                    Text("Disburse Loan")
+                }
+                Button(onClick = { showBottomSheet = true }) {
+                    Text("Add New Customer")
+                }
+            }
 
             // Customer List
             if (customers.isEmpty()) {
