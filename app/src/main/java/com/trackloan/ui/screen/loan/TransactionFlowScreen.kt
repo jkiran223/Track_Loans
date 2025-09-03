@@ -1,5 +1,8 @@
 package com.trackloan.ui.screen.loan
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
@@ -16,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,6 +36,14 @@ import com.trackloan.ui.navigation.NavRoutes
 import com.trackloan.ui.viewmodel.TransactionFlowViewModel
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
+
+// Function to launch the dialer with the given phone number
+fun launchDialer(context: Context, phoneNumber: String) {
+    val intent = Intent(Intent.ACTION_DIAL).apply {
+        data = Uri.parse("tel:$phoneNumber")
+    }
+    context.startActivity(intent)
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,115 +62,170 @@ fun TransactionFlowScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Top sheet with search and customer details
-        Surface(
-            tonalElevation = 4.dp,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { query -> viewModel.searchCustomers(query) },
-                    label = { Text("Search Customers") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                selectedCustomer?.let { customer ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = customer.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        customer.mobileNumber?.let {
+    Scaffold(
+        topBar = {
+            // Sticky top sheet with search and customer details
+            Surface(
+                tonalElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    if (selectedCustomer == null) {
+                        // Show search field when no customer is selected
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { query -> viewModel.searchCustomers(query) },
+                            label = { Text("Search Customers") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        // Show customer details with cross icon when customer is selected
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text(
-                                text = it,
-                                style = MaterialTheme.typography.bodySmall,
+                                text = selectedCustomer!!.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
                             )
+                            IconButton(onClick = { viewModel.clearSelection() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Clear Selection"
+                                )
+                            }
                         }
-                        customer.address?.let {
-                            Text(
-                                text = it,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Mobile number row
+                        selectedCustomer!!.mobileNumber?.let { mobile ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { launchDialer(context, mobile) }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Call,
+                                    contentDescription = "Call",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = mobile,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        // Address row
+                        selectedCustomer!!.address?.let { address ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = "Address",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = address,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
                 }
             }
         }
-
-        // Customer list - show only if no customer selected
-        if (selectedCustomer == null) {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(8.dp)
-            ) {
-                items(customers) { customer ->
-                    CustomerListItem(
-                        customer = customer,
-                        isSelected = false,
-                        onClick = { viewModel.selectCustomer(customer) }
-                    )
+    ) { paddingValues ->
+        // Content area with proper padding from scaffold
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Customer list - show only if no customer selected
+            if (selectedCustomer == null) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    items(customers) { customer ->
+                        CustomerListItem(
+                            customer = customer,
+                            isSelected = false,
+                            onClick = { viewModel.selectCustomer(customer) }
+                        )
+                    }
                 }
             }
-        }
 
-        // Loan list for selected customer - use remaining space
-        if (selectedCustomer != null) {
-            Text(
-                text = "Loans for ${selectedCustomer!!.name}",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(8.dp)
-            )
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(8.dp)
-            ) {
-                items(loans) { loan ->
-                    var offsetX by remember { mutableStateOf(0f) }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pointerInput(Unit) {
-                                detectHorizontalDragGestures { change, dragAmount ->
-                                    offsetX += dragAmount
-                                    if (offsetX > 200f) {
-                                        // Swipe right detected, navigate to EMI list
-                                        navController.navigate(NavRoutes.EMIList.createRoute(loan.id))
-                                        offsetX = 0f
+            // Loan list for selected customer - use remaining space
+            if (selectedCustomer != null) {
+                Text(
+                    text = "Loans for ${selectedCustomer!!.name}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(8.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    items(loans) { loan ->
+                        var offsetX by remember { mutableStateOf(0f) }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(Unit) {
+                                    detectHorizontalDragGestures { change, dragAmount ->
+                                        offsetX += dragAmount
+                                        if (offsetX > 200f) {
+                                            // Swipe right detected, navigate to EMI list
+                                            navController.navigate(NavRoutes.EMIList.createRoute(loan.id))
+                                            offsetX = 0f
+                                        }
                                     }
                                 }
-                            }
-                    ) {
-                        val paidTransactions = viewModel.getTransactionsForLoan(loan.id).filter { it.status == com.trackloan.domain.model.TransactionStatus.PAID }
-                        val paidEmiCount = paidTransactions.size
-                        val totalEmiCount = loan.emiTenure
-                        val progress = if (totalEmiCount > 0) paidEmiCount.toFloat() / totalEmiCount.toFloat() else 0f
+                        ) {
+                            val paidTransactions = viewModel.getTransactionsForLoan(loan.id).filter { it.status == com.trackloan.domain.model.TransactionStatus.PAID }
+                            val paidEmiCount = paidTransactions.size
+                            val totalEmiCount = loan.emiTenure
+                            val progress = if (totalEmiCount > 0) paidEmiCount.toFloat() / totalEmiCount.toFloat() else 0f
 
-                        LoanListItem(
-                            loan = loan,
-                            paidEmiCount = paidEmiCount,
-                            totalEmiCount = totalEmiCount,
-                            emiProgress = progress,
-                            onLoanDetailsClick = {
-                                navController.navigate(NavRoutes.LoanDetail.createRoute(loan.id))
-                            },
-                            onLoanClick = {
-                                viewModel.selectLoanForPayment(loan)
-                            }
-                        )
+                            LoanListItem(
+                                loan = loan,
+                                paidEmiCount = paidEmiCount,
+                                totalEmiCount = totalEmiCount,
+                                emiProgress = progress,
+                                onLoanDetailsClick = {
+                                    navController.navigate(NavRoutes.LoanDetail.createRoute(loan.id))
+                                },
+                                onLoanClick = {
+                                    viewModel.selectLoanForPayment(loan)
+                                }
+                            )
+                        }
                     }
                 }
             }
