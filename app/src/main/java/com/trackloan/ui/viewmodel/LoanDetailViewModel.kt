@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trackloan.common.Result
 import com.trackloan.common.UiState
+import com.trackloan.domain.model.Customer
 import com.trackloan.domain.model.Loan
 import com.trackloan.domain.model.Transaction
+import com.trackloan.domain.repository.CustomerRepository
 import com.trackloan.domain.repository.LoanRepository
 import com.trackloan.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +20,8 @@ import javax.inject.Inject
 @HiltViewModel
 class LoanDetailViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val customerRepository: CustomerRepository
 ) : ViewModel() {
 
     // UI State
@@ -28,6 +31,10 @@ class LoanDetailViewModel @Inject constructor(
     // Loan data
     private val _loan = MutableStateFlow<Loan?>(null)
     val loan: StateFlow<Loan?> = _loan.asStateFlow()
+
+    // Customer data
+    private val _customer = MutableStateFlow<Customer?>(null)
+    val customer: StateFlow<Customer?> = _customer.asStateFlow()
 
     // Transaction data
     private val _transactions = MutableStateFlow<List<Transaction>>(emptyList())
@@ -46,10 +53,27 @@ class LoanDetailViewModel @Inject constructor(
             when (loanResult) {
                 is com.trackloan.common.Result.Success<Loan?> -> {
                     _loan.value = loanResult.data
+
+                    // Load customer details using customerId from loan
+                    loanResult.data?.let { loan ->
+                        val customerResult = customerRepository.getCustomerById(loan.customerId)
+                        when (customerResult) {
+                            is com.trackloan.common.Result.Success<Customer?> -> {
+                                _customer.value = customerResult.data
+                            }
+                            is com.trackloan.common.Result.Error -> {
+                                _customer.value = null
+                            }
+                            is com.trackloan.common.Result.Loading -> {
+                                // Handle loading state if needed
+                            }
+                        }
+                    }
                 }
                 is com.trackloan.common.Result.Error -> {
                     // Handle error - could emit error state
                     _loan.value = null
+                    _customer.value = null
                 }
                 is com.trackloan.common.Result.Loading -> {
                     // Handle loading state if needed

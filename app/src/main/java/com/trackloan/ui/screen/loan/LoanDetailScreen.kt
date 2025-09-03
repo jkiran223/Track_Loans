@@ -28,6 +28,7 @@ fun LoanDetailScreen(
     viewModel: LoanDetailViewModel = hiltViewModel()
 ) {
     val loan by viewModel.loan.collectAsState()
+    val customer by viewModel.customer.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val showPaymentSheet by viewModel.showPaymentSheet.collectAsState()
@@ -72,7 +73,7 @@ fun LoanDetailScreen(
                 ) {
                     // Loan Summary Card
                     item {
-                        LoanSummaryCard(loanData)
+                        LoanSummaryCard(loanData, customer, transactions)
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
@@ -121,7 +122,7 @@ fun LoanDetailScreen(
                         }
                     } else {
                         items(transactions.take(5)) { transaction ->
-                            TransactionCard(transaction)
+                            TransactionCard(transaction, transactions)
                         }
 
                         // Show more button if there are more than 5 transactions
@@ -172,7 +173,14 @@ fun LoanDetailScreen(
 }
 
 @Composable
-private fun LoanSummaryCard(loan: Loan) {
+private fun LoanSummaryCard(
+    loan: Loan,
+    customer: com.trackloan.domain.model.Customer?,
+    transactions: List<com.trackloan.domain.model.Transaction>
+) {
+    val paidCount = transactions.count { it.status == com.trackloan.domain.model.TransactionStatus.PAID }
+    val progress = if (loan.emiTenure > 0) paidCount.toFloat() / loan.emiTenure.toFloat() else 0f
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -183,14 +191,14 @@ private fun LoanSummaryCard(loan: Loan) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Loan ID and Status
+            // Customer Name and Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Loan ${loan.loanId}",
+                    text = customer?.name ?: "Unknown Customer",
                     style = MaterialTheme.typography.headlineMedium
                 )
                 LoanStatusChip(loan.status)
@@ -198,7 +206,7 @@ private fun LoanSummaryCard(loan: Loan) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Loan Details Grid
+            // Loan Amount and EMI Amount - Made more prominent
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -206,24 +214,26 @@ private fun LoanSummaryCard(loan: Loan) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Loan Amount",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "₹${loan.loanAmount}",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "EMI Amount",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "₹${loan.emiAmount}",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -270,12 +280,12 @@ private fun LoanSummaryCard(loan: Loan) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 LinearProgressIndicator(
-                    progress = { 0.3f }, // This should be calculated based on actual payments
+                    progress = progress.coerceIn(0f, 1f),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "3 of 12 EMIs paid",
+                    text = "$paidCount of ${loan.emiTenure} EMIs paid",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -306,7 +316,11 @@ private fun LoanStatusChip(status: com.trackloan.domain.model.LoanStatus) {
 }
 
 @Composable
-private fun TransactionCard(transaction: Transaction) {
+private fun TransactionCard(transaction: Transaction, allTransactions: List<Transaction>) {
+    // Calculate EMI number based on transaction sequence (sorted by payment date)
+    val sortedTransactions = allTransactions.sortedBy { it.paymentDate }
+    val emiNumber = sortedTransactions.indexOfFirst { it.id == transaction.id } + 1
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -321,7 +335,7 @@ private fun TransactionCard(transaction: Transaction) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = transaction.transactionRef,
+                    text = "EMI $emiNumber",
                     style = MaterialTheme.typography.titleSmall
                 )
                 Text(
