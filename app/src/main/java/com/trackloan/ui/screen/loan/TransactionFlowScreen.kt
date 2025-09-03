@@ -63,6 +63,8 @@ fun TransactionFlowScreen(
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    var showSuccessSnackbar by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -232,14 +234,34 @@ fun TransactionFlowScreen(
         }
     }
 
+    // Show success snackbar when payment completes
+    LaunchedEffect(showSuccessSnackbar) {
+        if (showSuccessSnackbar) {
+            snackbarHostState.showSnackbar(
+                message = "Payment processed successfully! 🎉",
+                duration = SnackbarDuration.Short
+            )
+            showSuccessSnackbar = false
+        }
+    }
+
     if (showPaymentBottomSheet && selectedLoanForPayment != null) {
         val loan = selectedLoanForPayment!!
         PaymentBottomSheet(
             loanId = loan.id,
             onDismiss = { viewModel.dismissPaymentBottomSheet() },
-            onPaymentSuccess = { viewModel.dismissPaymentBottomSheet() }
+            onPaymentSuccess = {
+                viewModel.dismissPaymentBottomSheet()
+                showSuccessSnackbar = true
+            }
         )
     }
+
+    // Snackbar Host
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.padding(16.dp)
+    )
 }
 
 @Composable

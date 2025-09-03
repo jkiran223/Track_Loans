@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -42,24 +43,18 @@ fun PaymentBottomSheet(
     val showConfirmation by viewModel.showConfirmation.collectAsState()
     val isExpanded by viewModel.isExpanded.collectAsState()
 
-    val snackbarHostState = remember { SnackbarHostState() }
+
 
     // Handle UI state changes
     LaunchedEffect(uiState) {
         when (uiState) {
             is com.trackloan.common.UiState.Success -> {
-                snackbarHostState.showSnackbar(
-                    message = "Payment processed successfully! 🎉",
-                    duration = SnackbarDuration.Short
-                )
+                // Dismiss bottom sheet immediately for quick close
+                scope.launch {
+                    sheetState.hide()
+                }
                 onPaymentSuccess()
                 onDismiss()
-            }
-            is com.trackloan.common.UiState.Error -> {
-                snackbarHostState.showSnackbar(
-                    message = (uiState as com.trackloan.common.UiState.Error).message,
-                    duration = SnackbarDuration.Long
-                )
             }
             else -> {}
         }
@@ -155,12 +150,6 @@ fun PaymentBottomSheet(
             )
         }
     }
-
-    // Snackbar Host (invisible but functional)
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier.padding(bottom = 16.dp)
-    )
 }
 
 @Composable
