@@ -29,6 +29,10 @@ class PaymentViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val uiState: StateFlow<UiState<Unit>> = _uiState.asStateFlow()
 
+    // Processing time
+    private val _processingTime = MutableStateFlow<Long>(0L)
+    val processingTime: StateFlow<Long> = _processingTime.asStateFlow()
+
     // Next EMI data
     private val _nextEmi = MutableStateFlow<NextEmiData?>(null)
     val nextEmi: StateFlow<NextEmiData?> = _nextEmi.asStateFlow()
@@ -158,6 +162,7 @@ class PaymentViewModel @Inject constructor(
     fun processPayment() {
         val formData = _paymentForm.value
         val isQuickPay = !_isExpanded.value
+        val startTime = System.currentTimeMillis()
 
         viewModelScope.launch {
             _uiState.value = UiState.Loading
@@ -184,6 +189,8 @@ class PaymentViewModel @Inject constructor(
 
                 when (result) {
                     is Result.Success -> {
+                        val elapsed = System.currentTimeMillis() - startTime
+                        _processingTime.value = elapsed
                         _uiState.value = UiState.Success(Unit)
                         // Reset form
                         initializeFormData()

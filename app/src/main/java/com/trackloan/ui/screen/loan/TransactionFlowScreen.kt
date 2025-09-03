@@ -238,6 +238,8 @@ fun TransactionFlowScreen(
     // Show success snackbar when payment completes
     LaunchedEffect(showSuccessSnackbar) {
         if (showSuccessSnackbar) {
+            // Add a small delay to sync with payment processing time if needed
+            kotlinx.coroutines.delay(300) // 300ms delay, adjust as needed
             snackbarHostState.showSnackbar(
                 message = "Payment processed successfully! 🎉",
                 duration = SnackbarDuration.Short

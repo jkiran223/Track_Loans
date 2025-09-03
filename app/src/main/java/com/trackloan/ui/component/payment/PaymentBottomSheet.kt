@@ -52,9 +52,14 @@ fun PaymentBottomSheet(
                 // Dismiss bottom sheet immediately for quick close
                 scope.launch {
                     sheetState.hide()
+                    // Delay calling onPaymentSuccess based on processing time from ViewModel
+                    val processingTime = viewModel.processingTime.value
+                    if (processingTime > 0) {
+                        kotlinx.coroutines.delay(processingTime)
+                    }
+                    onPaymentSuccess()
+                    onDismiss()
                 }
-                onPaymentSuccess()
-                onDismiss()
             }
             else -> {}
         }
