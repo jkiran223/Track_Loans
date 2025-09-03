@@ -114,22 +114,23 @@ fun TransactionFlowScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { launchDialer(context, mobile) }
                                     .padding(vertical = 4.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Call,
-                                    contentDescription = "Call",
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = mobile,
                                     style = MaterialTheme.typography.bodyMedium,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
                                 )
+                                IconButton(onClick = { launchDialer(context, mobile) }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Call,
+                                        contentDescription = "Call",
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
 
