@@ -1,5 +1,6 @@
 package com.trackloan.ui.screen.loan
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,7 +21,7 @@ import com.trackloan.ui.navigation.NavRoutes
 import com.trackloan.ui.viewmodel.LoanDetailViewModel
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LoanDetailScreen(
     navController: NavController,
@@ -71,40 +72,25 @@ fun LoanDetailScreen(
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
-                    // Loan Summary Card
-                    item {
-                        LoanSummaryCard(loanData, customer, transactions)
-                        Spacer(modifier = Modifier.height(16.dp))
+                    // Sticky Loan Summary Card
+                    stickyHeader {
+                        Column {
+                            LoanSummaryCard(loanData, customer, transactions)
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                     }
 
                     // Payment History Header
                     item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Payment History (${transactions.size})",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            TextButton(onClick = {
-                                navController.navigate(NavRoutes.EMIList.createRoute(loanId))
-                            }) {
-                                Text("View All")
-                                Icon(
-                                    Icons.Default.ArrowForward,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
+                        Text(
+                            text = "Payment History (${transactions.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    // Recent Transactions
+                    // All Transactions
                     if (transactions.isEmpty()) {
                         item {
                             Box(
@@ -121,24 +107,8 @@ fun LoanDetailScreen(
                             }
                         }
                     } else {
-                        items(transactions.take(5)) { transaction ->
+                        items(transactions) { transaction ->
                             TransactionCard(transaction, transactions)
-                        }
-
-                        // Show more button if there are more than 5 transactions
-                        if (transactions.size > 5) {
-                            item {
-                                TextButton(
-                                    onClick = {
-                                        navController.navigate(NavRoutes.EMIList.createRoute(loanId))
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                                ) {
-                                    Text("View All Payments")
-                                }
-                            }
                         }
                     }
                 }
