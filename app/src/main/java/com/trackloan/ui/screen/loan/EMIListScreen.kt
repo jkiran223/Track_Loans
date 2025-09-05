@@ -16,6 +16,9 @@ import androidx.navigation.NavController
 import com.trackloan.domain.model.Transaction
 import com.trackloan.ui.component.payment.PaymentBottomSheet
 import com.trackloan.ui.component.transaction.UpdateTransactionBottomSheet
+import com.trackloan.ui.theme.Green
+import com.trackloan.ui.theme.Orange
+import com.trackloan.ui.theme.Red
 import com.trackloan.ui.viewmodel.EMIListViewModel
 import java.time.format.DateTimeFormatter
 
@@ -321,9 +324,9 @@ private fun EMICard(
 @Composable
 private fun TransactionStatusChip(status: com.trackloan.domain.model.TransactionStatus) {
     val (backgroundColor, contentColor) = when (status) {
-        com.trackloan.domain.model.TransactionStatus.PAID -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
-        com.trackloan.domain.model.TransactionStatus.DUE -> MaterialTheme.colorScheme.secondary to MaterialTheme.colorScheme.onSecondary
-        com.trackloan.domain.model.TransactionStatus.OVERDUE -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
+        com.trackloan.domain.model.TransactionStatus.PAID -> Green to androidx.compose.ui.graphics.Color.White
+        com.trackloan.domain.model.TransactionStatus.DUE -> Orange to androidx.compose.ui.graphics.Color.Black
+        com.trackloan.domain.model.TransactionStatus.OVERDUE -> Red to androidx.compose.ui.graphics.Color.White
     }
 
     Surface(

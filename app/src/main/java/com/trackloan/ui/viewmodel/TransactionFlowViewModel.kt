@@ -10,9 +10,11 @@ import com.trackloan.domain.repository.CustomerRepository
 import com.trackloan.domain.repository.LoanRepository
 import com.trackloan.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -139,5 +141,22 @@ class TransactionFlowViewModel @Inject constructor(
     fun getTransactionsForLoan(loanId: Long): List<Transaction> {
         return _transactions.value.filter { it.loanId == loanId }
             .sortedBy { it.paymentDate }
+    }
+
+    fun getLoanStatus(loanId: Long): com.trackloan.domain.model.TransactionStatus {
+        val loanTransactions = getTransactionsForLoan(loanId)
+        if (loanTransactions.isEmpty()) return com.trackloan.domain.model.TransactionStatus.DUE
+
+        val hasOverdue = loanTransactions.any { it.status == com.trackloan.domain.model.TransactionStatus.OVERDUE }
+        val hasDueToday = loanTransactions.any { it.status == com.trackloan.domain.model.TransactionStatus.DUE && it.paymentDate == java.time.LocalDate.now() }
+        val hasDue = loanTransactions.any { it.status == com.trackloan.domain.model.TransactionStatus.DUE }
+        val allPaid = loanTransactions.all { it.status == com.trackloan.domain.model.TransactionStatus.PAID }
+
+        return when {
+            hasOverdue -> com.trackloan.domain.model.TransactionStatus.OVERDUE
+            hasDueToday -> com.trackloan.domain.model.TransactionStatus.DUE // This will be treated as "due today" for orange color
+            allPaid || hasDue -> com.trackloan.domain.model.TransactionStatus.PAID // Green for paid or regular due
+            else -> com.trackloan.domain.model.TransactionStatus.PAID
+        }
     }
 }

@@ -10,6 +10,8 @@ import com.trackloan.utils.TransactionRefGenerator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -140,12 +142,24 @@ class TransactionRepository @Inject constructor(
     override fun observeTransactionsByLoanId(loanId: Long): Flow<List<DomainTransaction>> {
         return transactionDao.getTransactionsByLoanId(loanId).map { transactions: List<Transaction> ->
             transactions.map { entity: Transaction ->
+                val originalStatus = com.trackloan.domain.model.TransactionStatus.valueOf(entity.status.name)
+                val updatedStatus = if (originalStatus == com.trackloan.domain.model.TransactionStatus.DUE) {
+                    val today = LocalDate.now()
+                    val paymentDate = entity.paymentDate.toLocalDate()
+                    if (paymentDate.isBefore(today)) {
+                        com.trackloan.domain.model.TransactionStatus.OVERDUE
+                    } else {
+                        com.trackloan.domain.model.TransactionStatus.DUE
+                    }
+                } else {
+                    originalStatus
+                }
                 DomainTransaction(
                     id = entity.id,
                     loanId = entity.loanId,
                     amount = entity.amount,
                     paymentDate = entity.paymentDate,
-                    status = com.trackloan.domain.model.TransactionStatus.valueOf(entity.status.name),
+                    status = updatedStatus,
                     transactionRef = entity.transactionRef
                 )
             }
@@ -155,12 +169,24 @@ class TransactionRepository @Inject constructor(
     override fun observeTransactionsByCustomerId(customerId: Long): Flow<List<DomainTransaction>> {
         return transactionDao.getTransactionsByCustomerId(customerId).map { transactions: List<Transaction> ->
             transactions.map { entity: Transaction ->
+                val originalStatus = com.trackloan.domain.model.TransactionStatus.valueOf(entity.status.name)
+                val updatedStatus = if (originalStatus == com.trackloan.domain.model.TransactionStatus.DUE) {
+                    val today = LocalDate.now()
+                    val paymentDate = entity.paymentDate.toLocalDate()
+                    if (paymentDate.isBefore(today)) {
+                        com.trackloan.domain.model.TransactionStatus.OVERDUE
+                    } else {
+                        com.trackloan.domain.model.TransactionStatus.DUE
+                    }
+                } else {
+                    originalStatus
+                }
                 DomainTransaction(
                     id = entity.id,
                     loanId = entity.loanId,
                     amount = entity.amount,
                     paymentDate = entity.paymentDate,
-                    status = com.trackloan.domain.model.TransactionStatus.valueOf(entity.status.name),
+                    status = updatedStatus,
                     transactionRef = entity.transactionRef
                 )
             }
