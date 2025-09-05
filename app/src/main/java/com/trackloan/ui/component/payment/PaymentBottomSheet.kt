@@ -377,17 +377,79 @@ private fun PaymentConfirmationDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(
-                when {
-                    isLastPayment -> "Confirm and Close Loan"
-                    isQuickPay -> "Confirm Quick Payment"
-                    else -> "Confirm Payment"
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (isLastPayment) {
+                    Icon(
+                        Icons.Default.Done,
+                        contentDescription = "Loan Closure",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
-            )
+                Text(
+                    when {
+                        isLastPayment -> "Confirm and Close Loan"
+                        isQuickPay -> "Confirm Quick Payment"
+                        else -> "Confirm Payment"
+                    }
+                )
+            }
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (isQuickPay && nextEmi != null) {
+                if (isLastPayment) {
+                    // Loan closure summary
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Loan Closure Summary",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            if (isQuickPay && nextEmi != null) {
+                                Text(
+                                    text = "Final EMI ${nextEmi.emiNumber}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "Amount: ₹${nextEmi.amount}",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Text(
+                                    text = "Final Payment Amount: ₹${paymentForm.amount}",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Text(
+                                text = "Payment Date: ${if (isQuickPay) LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) else paymentForm.paymentDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+
+                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            Text(
+                                text = "⚠️ This payment will close your loan completely",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                } else if (isQuickPay && nextEmi != null) {
                     // Quick Pay summary
                     Card(
                         modifier = Modifier.fillMaxWidth(),
