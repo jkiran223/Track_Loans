@@ -3,6 +3,7 @@ package com.trackloan.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trackloan.common.UiState
+import com.trackloan.domain.model.LoanStatus
 import com.trackloan.domain.model.Customer
 import com.trackloan.domain.model.Loan
 import com.trackloan.domain.model.Transaction
@@ -17,6 +18,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+enum class LoanFilter {
+    ACTIVE, CLOSED, ALL
+}
 
 @HiltViewModel
 class TransactionFlowViewModel @Inject constructor(
@@ -51,6 +56,12 @@ class TransactionFlowViewModel @Inject constructor(
 
     private val _selectedLoanForPayment = MutableStateFlow<Loan?>(null)
     val selectedLoanForPayment: StateFlow<Loan?> = _selectedLoanForPayment.asStateFlow()
+
+    private val _loanFilter = MutableStateFlow(LoanFilter.ACTIVE)
+    val loanFilter: StateFlow<LoanFilter> = _loanFilter.asStateFlow()
+
+    private val _allLoans = MutableStateFlow<List<Loan>>(emptyList())
+    val filteredLoans: StateFlow<List<Loan>> = _loans.asStateFlow()
 
     init {
         loadCustomers()
@@ -93,12 +104,28 @@ class TransactionFlowViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 loanRepository.observeLoansByCustomerId(customerId).collect { loanList ->
-                    _loans.value = loanList
+                    _allLoans.value = loanList
+                    applyLoanFilter()
                 }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to load loans")
             }
         }
+    }
+
+    fun setLoanFilter(filter: LoanFilter) {
+        _loanFilter.value = filter
+        applyLoanFilter()
+    }
+
+    private fun applyLoanFilter() {
+        val allLoans = _allLoans.value
+        val filtered = when (_loanFilter.value) {
+            LoanFilter.ACTIVE -> allLoans.filter { it.status == LoanStatus.ACTIVE }
+            LoanFilter.CLOSED -> allLoans.filter { it.status == LoanStatus.CLOSED }
+            LoanFilter.ALL -> allLoans
+        }
+        _loans.value = filtered
     }
 
     private fun loadTransactionsForCustomer(customerId: Long) {
