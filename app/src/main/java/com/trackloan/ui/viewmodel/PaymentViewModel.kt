@@ -22,7 +22,8 @@ import javax.inject.Inject
 @HiltViewModel
 class PaymentViewModel @Inject constructor(
     private val getNextDueEmiUseCase: GetNextDueEmiUseCase,
-    private val processPaymentUseCase: ProcessPaymentUseCase
+    private val processPaymentUseCase: ProcessPaymentUseCase,
+    private val checkLastPaymentUseCase: com.trackloan.domain.usecase.transaction.CheckLastPaymentUseCase
 ) : ViewModel() {
 
     // UI State
@@ -146,18 +147,57 @@ class PaymentViewModel @Inject constructor(
     }
 
     fun showQuickPayConfirmation() {
-        _showConfirmation.value = true
+        viewModelScope.launch {
+            // Check if this payment will complete the loan
+            val amount = _nextEmi.value?.amount ?: 0.0
+            val result = checkLastPaymentUseCase(currentLoanId, amount)
+            val willCompleteLoan = when (result) {
+                is Result.Success -> result.data
+                else -> false
+            }
+            _isLastPayment.value = willCompleteLoan
+            _showConfirmation.value = true
+        }
     }
 
     fun showPaymentConfirmation() {
         if (_paymentForm.value.isValid) {
-            _showConfirmation.value = true
+            viewModelScope.launch {
+                // Check if this payment will complete the loan
+                val amount = _paymentForm.value.amount.toDoubleOrNull() ?: 0.0
+                val result = checkLastPaymentUseCase(currentLoanId, amount)
+                val willCompleteLoan = when (result) {
+                    is Result.Success -> result.data
+                    else -> false
+                }
+                _isLastPayment.value = willCompleteLoan
+                _showConfirmation.value = true
+            }
         }
+    }
+
+    private fun checkIfPaymentWillCompleteLoan(amount: Double): Boolean {
+        val emiNumber = _nextEmi.value?.emiNumber ?: 0
+        // If the current EMI number is greater than the total EMIs, it means loan is complete
+        // Fix off-by-one: check if emiNumber is exactly equal to total EMIs
+        // Assuming total EMIs is emiNumber from nextEmi or from loan data
+        // Here, we consider emiNumber as the next EMI to be paid, so if emiNumber > totalEmis, loan is complete
+        // We need to get total EMIs from loan or nextEmi data - assuming nextEmi has emiNumber as next EMI number
+        // So if emiNumber > totalEmis, then last payment done
+        // But we don't have totalEmis here, so we assume emiNumber is next EMI number, so last payment is when emiNumber == totalEmis + 1
+        // To fix, we need to get totalEmis from loan data or pass it here
+        // For now, we assume emiNumber is next EMI number, so last payment is when emiNumber == totalEmis + 1
+        // So if emiNumber > totalEmis, return true
+        // Since we don't have totalEmis, we return false here and rely on backend to set isLastPayment flag
+        return false
     }
 
     fun dismissConfirmation() {
         _showConfirmation.value = false
     }
+
+    private val _isLastPayment = MutableStateFlow(false)
+    val isLastPayment: StateFlow<Boolean> = _isLastPayment.asStateFlow()
 
     fun processPayment() {
         val formData = _paymentForm.value
@@ -195,6 +235,7 @@ class PaymentViewModel @Inject constructor(
                         // Reset form
                         initializeFormData()
                         _isExpanded.value = false
+                        _isLastPayment.value = result.data.isLastPayment
                     }
                     is Result.Error -> {
                         _uiState.value = UiState.Error(result.exception.message ?: "Payment failed")

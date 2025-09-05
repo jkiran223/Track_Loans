@@ -11,6 +11,11 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import javax.inject.Inject
 
+data class PaymentResult(
+    val transactionId: Long,
+    val isLastPayment: Boolean
+)
+
 class ProcessPaymentUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val loanRepository: LoanRepository
@@ -19,7 +24,7 @@ class ProcessPaymentUseCase @Inject constructor(
         loanId: Long,
         amount: Double,
         paymentDate: LocalDate
-    ): Result<Long> {
+    ): Result<PaymentResult> {
         // Validate inputs
         val validationError = validateInputs(loanId, amount, paymentDate)
         if (validationError != null) {
@@ -57,6 +62,9 @@ class ProcessPaymentUseCase @Inject constructor(
             status = TransactionStatus.PAID // Mark as paid immediately for payment processing
         )
 
+        // Check if this payment will complete the loan BEFORE adding the transaction
+        val isLastPayment = willCompleteLoan(loanId, amount)
+
         // Add transaction to repository
         val transactionResult = transactionRepository.addTransaction(transaction)
         if (transactionResult is Result.Error) {
@@ -71,14 +79,16 @@ class ProcessPaymentUseCase @Inject constructor(
             return Result.Error(Exception("Failed to add transaction"))
         }
 
-        // Check if loan is fully paid after this transaction
-        val updatedLoanResult = checkAndUpdateLoanStatus(loanId)
-        if (updatedLoanResult is Result.Error) {
-            // Log error but don't fail the payment
-            // The payment was successful, just the loan status update failed
+        // If this is the last payment, close the loan
+        if (isLastPayment) {
+            val closeLoanResult = loanRepository.closeLoan(loanId)
+            if (closeLoanResult is Result.Error) {
+                // Log error but don't fail the payment
+                // The payment was successful, just the loan status update failed
+            }
         }
 
-        return Result.Success(transactionId)
+        return Result.Success(PaymentResult(transactionId, isLastPayment))
     }
 
     private fun validateInputs(
@@ -108,6 +118,43 @@ class ProcessPaymentUseCase @Inject constructor(
         }
 
         return null
+    }
+
+    private suspend fun willCompleteLoan(loanId: Long, currentPaymentAmount: Double): Boolean {
+        // Get all completed transactions for this loan
+        val transactionsResult = transactionRepository.getTransactionsByLoanId(loanId)
+        if (transactionsResult is Result.Error) {
+            return false
+        }
+
+        val transactions = when (transactionsResult) {
+            is Result.Success -> transactionsResult.data
+            else -> emptyList()
+        }
+        val completedTransactions = transactions.filter { it.status == TransactionStatus.PAID }
+
+        // Get loan details
+        val loanResult = loanRepository.getLoanById(loanId)
+        if (loanResult is Result.Error) {
+            return false
+        }
+
+        val loan = when (loanResult) {
+            is Result.Success -> loanResult.data
+            else -> null
+        }
+        if (loan == null) {
+            return false
+        }
+
+        // Calculate total paid amount including current payment
+        val totalPaid = completedTransactions.sumOf { it.amount } + currentPaymentAmount
+
+        // Calculate expected total amount
+        val expectedTotal = loan.emiAmount * loan.emiTenure
+
+        // Check if this payment will complete the loan
+        return totalPaid >= expectedTotal
     }
 
     private suspend fun checkAndUpdateLoanStatus(loanId: Long): Result<Unit> {

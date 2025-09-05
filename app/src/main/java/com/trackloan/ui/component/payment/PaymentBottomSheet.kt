@@ -42,6 +42,7 @@ fun PaymentBottomSheet(
     val paymentForm by viewModel.paymentForm.collectAsState()
     val showConfirmation by viewModel.showConfirmation.collectAsState()
     val isExpanded by viewModel.isExpanded.collectAsState()
+    val isLastPayment by viewModel.isLastPayment.collectAsState()
 
 
 
@@ -150,6 +151,7 @@ fun PaymentBottomSheet(
                 paymentForm = paymentForm,
                 nextEmi = nextEmi,
                 isQuickPay = !isExpanded,
+                isLastPayment = isLastPayment,
                 onConfirm = { viewModel.processPayment() },
                 onDismiss = { viewModel.dismissConfirmation() }
             )
@@ -368,13 +370,20 @@ private fun PaymentConfirmationDialog(
     paymentForm: PaymentViewModel.PaymentFormData,
     nextEmi: PaymentViewModel.NextEmiData?,
     isQuickPay: Boolean,
+    isLastPayment: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(if (isQuickPay) "Confirm Quick Payment" else "Confirm Payment")
+            Text(
+                when {
+                    isLastPayment -> "Confirm and Close Loan"
+                    isQuickPay -> "Confirm Quick Payment"
+                    else -> "Confirm Payment"
+                }
+            )
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -418,7 +427,6 @@ private fun PaymentConfirmationDialog(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -434,7 +442,12 @@ private fun PaymentConfirmationDialog(
         },
         confirmButton = {
             Button(onClick = onConfirm) {
-                Text("Confirm Payment")
+                Text(
+                    when {
+                        isLastPayment -> "Confirm and Close"
+                        else -> "Confirm Payment"
+                    }
+                )
             }
         },
         dismissButton = {
