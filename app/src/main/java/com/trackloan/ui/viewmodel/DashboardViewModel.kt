@@ -90,7 +90,6 @@ class DashboardViewModel @Inject constructor(
                     _emiDueToday.value = 0 // Placeholder
                 }
 
-                _uiState.value = UiState.Success(Unit)
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to load dashboard data")
             }

@@ -30,6 +30,7 @@ fun CustomerListScreen(
     val customers by viewModel.customers.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    val addCustomerUiState by viewModel.addCustomerUiState.collectAsState()
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedCustomer by remember { mutableStateOf<Customer?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -52,6 +53,29 @@ fun CustomerListScreen(
                 scope.launch {
                     snackbarHostState.showSnackbar(
                         message = (uiState as com.trackloan.common.UiState.Error).message,
+                        duration = SnackbarDuration.Long
+                    )
+                }
+            }
+            else -> {}
+        }
+    }
+
+    // Handle addCustomerUiState for success message with dynamic duration
+    LaunchedEffect(addCustomerUiState) {
+        when (addCustomerUiState) {
+            is com.trackloan.common.UiState.Success -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Customer added successfully",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+            is com.trackloan.common.UiState.Error -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = (addCustomerUiState as com.trackloan.common.UiState.Error).message,
                         duration = SnackbarDuration.Long
                     )
                 }
@@ -88,6 +112,8 @@ fun CustomerListScreen(
                 },
                 singleLine = true
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Action Buttons
             Row(

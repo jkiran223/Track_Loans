@@ -73,7 +73,6 @@ class CustomerViewModel @Inject constructor(
         customerRepository.observeAllCustomers()
             .onEach { customerList ->
                 _customers.value = customerList
-                _uiState.value = UiState.Success(Unit)
             }
             .catch { e ->
                 _uiState.value = UiState.Error(e.message ?: "Failed to load customers")

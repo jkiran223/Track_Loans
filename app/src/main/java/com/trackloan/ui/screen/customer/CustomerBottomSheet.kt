@@ -29,6 +29,17 @@ fun CustomerBottomSheet(
     onDismiss: () -> Unit,
     viewModel: CustomerViewModel = hiltViewModel()
 ) {
+
+    fun validateMobile(mobile: String): String? {
+        if (mobile.isEmpty()) {
+            return "Mobile number is required"
+        }
+        val mobileRegex = Regex("^[+]?[0-9]{10,15}$")
+        if (!mobileRegex.matches(mobile.trim())) {
+            return "Please enter a valid mobile number"
+        }
+        return null
+    }
     var isEditing by remember { mutableStateOf(customer == null) }
     var name by remember { mutableStateOf(customer?.name ?: "") }
     var mobile by remember { mutableStateOf(customer?.mobileNumber ?: "") }
@@ -55,6 +66,7 @@ fun CustomerBottomSheet(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
+            .imePadding()
     ) {
         if (customer != null && !isEditing) {
             // Show customer actions
@@ -154,15 +166,15 @@ fun CustomerBottomSheet(
                 value = mobile,
                 onValueChange = {
                     mobile = it
-                    mobileError = null
+                    mobileError = validateMobile(it)
                 },
-                label = { Text("Mobile Number") },
+                label = { Text("Mobile Number *") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), // ✅ Correct
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 isError = mobileError != null,
                 supportingText = {
-    if (mobileError != null) Text(mobileError!!)
-}
+                    if (mobileError != null) Text(mobileError!!)
+                }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -206,8 +218,11 @@ fun CustomerBottomSheet(
                             isValid = false
                         }
 
-                        // Validate mobile (optional)
-                        if (mobile.isNotEmpty()) {
+                        // Validate mobile (required)
+                        if (mobile.trim().isEmpty()) {
+                            mobileErr = "Mobile number is required"
+                            isValid = false
+                        } else {
                             val mobileRegex = Regex("^[+]?[0-9]{10,15}$")
                             if (!mobileRegex.matches(mobile.trim())) {
                                 mobileErr = "Please enter a valid mobile number"
