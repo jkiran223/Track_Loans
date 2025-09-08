@@ -194,4 +194,8 @@ class TransactionFlowViewModel @Inject constructor(
             else -> com.trackloan.domain.model.TransactionStatus.PAID // Due in future
         }
     }
+
+    suspend fun getNextDueEmi(loanId: Long): com.trackloan.common.Result<com.trackloan.domain.usecase.transaction.GetNextDueEmiUseCase.NextEmiData?> {
+        return getNextDueEmiUseCase(loanId)
+    }
 }

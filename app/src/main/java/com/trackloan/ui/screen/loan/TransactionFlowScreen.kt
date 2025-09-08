@@ -247,15 +247,23 @@ fun TransactionFlowScreen(
                             val progress = if (totalEmiCount > 0) paidEmiCount.toFloat() / totalEmiCount.toFloat() else 0f
 
                             var loanStatus by remember { mutableStateOf(com.trackloan.domain.model.TransactionStatus.PAID) }
-                            // Update loan status whenever transactions change for live color refresh
+                            var nextDueDate by remember { mutableStateOf<java.time.LocalDate?>(null) }
+                            // Update loan status and next due date whenever transactions change for live color refresh
                             LaunchedEffect(loan.id, viewModel.transactions.value) {
                                 loanStatus = viewModel.getLoanStatus(loan.id)
+                                // Get next due date
+                                val nextDueResult = viewModel.getNextDueEmi(loan.id)
+                                nextDueDate = when (nextDueResult) {
+                                    is com.trackloan.common.Result.Success -> nextDueResult.data?.dueDate
+                                    else -> null
+                                }
                             }
                             LoanListItem(
                                 loan = loan,
                                 paidEmiCount = paidEmiCount,
                                 totalEmiCount = totalEmiCount,
                                 emiProgress = progress,
+                                nextDueDate = nextDueDate,
                                 onLoanDetailsClick = {
                                     navController.navigate(NavRoutes.LoanDetail.createRoute(loan.id))
                                 },
@@ -358,7 +366,8 @@ fun LoanListItem(
     emiProgress: Float,
     onLoanDetailsClick: () -> Unit,
     onLoanClick: () -> Unit,
-    loanStatus: com.trackloan.domain.model.TransactionStatus
+    loanStatus: com.trackloan.domain.model.TransactionStatus,
+    nextDueDate: java.time.LocalDate? = null
 ) {
     val amountColor = when (loanStatus) {
         com.trackloan.domain.model.TransactionStatus.OVERDUE -> Red
@@ -411,6 +420,13 @@ fun LoanListItem(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (nextDueDate != null) {
+                    Text(
+                        text = "Next Due: ${nextDueDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy"))}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             // Icon-only button on the right
