@@ -246,7 +246,11 @@ fun TransactionFlowScreen(
                             val totalEmiCount = loan.emiTenure
                             val progress = if (totalEmiCount > 0) paidEmiCount.toFloat() / totalEmiCount.toFloat() else 0f
 
-                            val loanStatus = viewModel.getLoanStatus(loan.id)
+                            var loanStatus by remember { mutableStateOf(com.trackloan.domain.model.TransactionStatus.PAID) }
+                            // Update loan status whenever transactions change for live color refresh
+                            LaunchedEffect(loan.id, viewModel.transactions.value) {
+                                loanStatus = viewModel.getLoanStatus(loan.id)
+                            }
                             LoanListItem(
                                 loan = loan,
                                 paidEmiCount = paidEmiCount,
@@ -356,18 +360,17 @@ fun LoanListItem(
     onLoanClick: () -> Unit,
     loanStatus: com.trackloan.domain.model.TransactionStatus
 ) {
-    val (backgroundColor, contentColor) = when (loanStatus) {
-        com.trackloan.domain.model.TransactionStatus.OVERDUE -> Red to androidx.compose.ui.graphics.Color.White
-        com.trackloan.domain.model.TransactionStatus.DUE -> Orange to androidx.compose.ui.graphics.Color.Black // Due today
-        com.trackloan.domain.model.TransactionStatus.PAID -> Green to androidx.compose.ui.graphics.Color.White // Paid or regular due
+    val amountColor = when (loanStatus) {
+        com.trackloan.domain.model.TransactionStatus.OVERDUE -> Red
+        com.trackloan.domain.model.TransactionStatus.DUE -> Orange
+        com.trackloan.domain.model.TransactionStatus.PAID -> Green
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { onLoanClick() },
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+            .clickable { onLoanClick() }
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -381,15 +384,15 @@ fun LoanListItem(
                 CircularProgressIndicator(
                     progress = emiProgress,
                     modifier = Modifier.fillMaxSize(),
-                    color = contentColor,
-                    trackColor = backgroundColor.copy(alpha = 0.3f),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     strokeWidth = 4.dp
                 )
                 Text(
                     text = "$paidEmiCount of $totalEmiCount",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
-                    color = contentColor
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -401,12 +404,12 @@ fun LoanListItem(
                     text = "₹${loan.loanAmount}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = contentColor
+                    color = amountColor
                 )
                 Text(
                     text = "EMI: ₹${loan.emiAmount}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = contentColor.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -415,7 +418,7 @@ fun LoanListItem(
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = "Loan Details",
-                    tint = contentColor
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         }

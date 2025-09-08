@@ -10,6 +10,7 @@ import com.trackloan.domain.model.Transaction
 import com.trackloan.domain.repository.CustomerRepository
 import com.trackloan.domain.repository.LoanRepository
 import com.trackloan.domain.repository.TransactionRepository
+import com.trackloan.domain.usecase.transaction.GetNextDueEmiUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 enum class LoanFilter {
@@ -27,7 +29,8 @@ enum class LoanFilter {
 class TransactionFlowViewModel @Inject constructor(
     private val customerRepository: CustomerRepository,
     private val loanRepository: LoanRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val getNextDueEmiUseCase: GetNextDueEmiUseCase
 ) : ViewModel() {
 
     private val _customers = MutableStateFlow<List<Customer>>(emptyList())
@@ -170,20 +173,25 @@ class TransactionFlowViewModel @Inject constructor(
             .sortedBy { it.paymentDate }
     }
 
-    fun getLoanStatus(loanId: Long): com.trackloan.domain.model.TransactionStatus {
-        val loanTransactions = getTransactionsForLoan(loanId)
-        if (loanTransactions.isEmpty()) return com.trackloan.domain.model.TransactionStatus.DUE
+    suspend fun getLoanStatus(loanId: Long): com.trackloan.domain.model.TransactionStatus {
+        val nextDueResult = getNextDueEmiUseCase(loanId)
+        val nextDueData = when (nextDueResult) {
+            is com.trackloan.common.Result.Success -> nextDueResult.data
+            else -> null
+        }
 
-        val hasOverdue = loanTransactions.any { it.status == com.trackloan.domain.model.TransactionStatus.OVERDUE }
-        val hasDueToday = loanTransactions.any { it.status == com.trackloan.domain.model.TransactionStatus.DUE && it.paymentDate == java.time.LocalDate.now() }
-        val hasDue = loanTransactions.any { it.status == com.trackloan.domain.model.TransactionStatus.DUE }
-        val allPaid = loanTransactions.all { it.status == com.trackloan.domain.model.TransactionStatus.PAID }
+        if (nextDueData == null) {
+            // All EMIs paid
+            return com.trackloan.domain.model.TransactionStatus.PAID
+        }
+
+        val today = LocalDate.now()
+        val dueDate = nextDueData.dueDate
 
         return when {
-            hasOverdue -> com.trackloan.domain.model.TransactionStatus.OVERDUE
-            hasDueToday -> com.trackloan.domain.model.TransactionStatus.DUE // This will be treated as "due today" for orange color
-            allPaid || hasDue -> com.trackloan.domain.model.TransactionStatus.PAID // Green for paid or regular due
-            else -> com.trackloan.domain.model.TransactionStatus.PAID
+            dueDate.isBefore(today.minusDays(1)) -> com.trackloan.domain.model.TransactionStatus.OVERDUE // Overdue by more than 1 day
+            dueDate.isBefore(today.plusDays(2)) && dueDate.isAfter(today.minusDays(2)) -> com.trackloan.domain.model.TransactionStatus.DUE // Due today ±1 day
+            else -> com.trackloan.domain.model.TransactionStatus.PAID // Due in future
         }
     }
 }
