@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.trackloan.ui.viewmodel.LoanFilter
+import com.trackloan.ui.viewmodel.CustomerFilter
 import com.trackloan.domain.model.Customer
 import com.trackloan.domain.model.Loan
 import com.trackloan.domain.model.LoanStatus
@@ -65,6 +66,7 @@ fun TransactionFlowScreen(
     val selectedLoanForPayment by viewModel.selectedLoanForPayment.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val loanFilter by viewModel.loanFilter.collectAsState()
+    val customerFilter by viewModel.customerFilter.collectAsState()
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -175,6 +177,30 @@ fun TransactionFlowScreen(
         ) {
             // Customer list - show only if no customer selected
             if (selectedCustomer == null) {
+                // Customer filter buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = customerFilter == CustomerFilter.ALL,
+                        onClick = { viewModel.setCustomerFilter(CustomerFilter.ALL) },
+                        label = { Text("All") }
+                    )
+                    FilterChip(
+                        selected = customerFilter == CustomerFilter.DUE_TODAY,
+                        onClick = { viewModel.setCustomerFilter(CustomerFilter.DUE_TODAY) },
+                        label = { Text("Due Today") }
+                    )
+                    FilterChip(
+                        selected = customerFilter == CustomerFilter.OVERDUE,
+                        onClick = { viewModel.setCustomerFilter(CustomerFilter.OVERDUE) },
+                        label = { Text("Overdue") }
+                    )
+                }
+
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(8.dp)

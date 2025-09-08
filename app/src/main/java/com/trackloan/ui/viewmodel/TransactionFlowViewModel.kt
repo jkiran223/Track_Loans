@@ -25,6 +25,10 @@ enum class LoanFilter {
     ACTIVE, CLOSED, ALL
 }
 
+enum class CustomerFilter {
+    ALL, DUE_TODAY, OVERDUE
+}
+
 @HiltViewModel
 class TransactionFlowViewModel @Inject constructor(
     private val customerRepository: CustomerRepository,
@@ -63,8 +67,13 @@ class TransactionFlowViewModel @Inject constructor(
     private val _loanFilter = MutableStateFlow(LoanFilter.ACTIVE)
     val loanFilter: StateFlow<LoanFilter> = _loanFilter.asStateFlow()
 
+    private val _customerFilter = MutableStateFlow(CustomerFilter.ALL)
+    val customerFilter: StateFlow<CustomerFilter> = _customerFilter.asStateFlow()
+
     private val _allLoans = MutableStateFlow<List<Loan>>(emptyList())
     val filteredLoans: StateFlow<List<Loan>> = _loans.asStateFlow()
+
+    private val _allTransactions = MutableStateFlow<List<Transaction>>(emptyList())
 
     init {
         loadCustomers()
@@ -74,27 +83,117 @@ class TransactionFlowViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
+                // Load customers
                 customerRepository.observeAllCustomers().collect { customerList ->
                     _customers.value = customerList
-                    _filteredCustomers.value = customerList
+                    applyCustomerFilter()
                     _uiState.value = UiState.Success(Unit)
                 }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to load customers")
             }
         }
+
+        // Load all loans and transactions for filtering
+        loadAllLoansAndTransactions()
+    }
+
+    private fun loadAllLoansAndTransactions() {
+        viewModelScope.launch {
+            try {
+                loanRepository.observeAllLoans().collect { loanList ->
+                    _allLoans.value = loanList
+                }
+            } catch (e: Exception) {
+                // Handle error if needed
+            }
+        }
+
+        viewModelScope.launch {
+            try {
+                transactionRepository.observeAllTransactions().collect { transactionList ->
+                    _allTransactions.value = transactionList
+                }
+            } catch (e: Exception) {
+                // Handle error if needed
+            }
+        }
     }
 
     fun searchCustomers(query: String) {
         _searchQuery.value = query
-        if (query.isBlank()) {
-            _filteredCustomers.value = _customers.value
-        } else {
-            _filteredCustomers.value = _customers.value.filter { customer ->
-                customer.name.contains(query, ignoreCase = true) ||
-                customer.mobileNumber?.contains(query) == true
+        applyCustomerFilter()
+    }
+
+    fun setCustomerFilter(filter: CustomerFilter) {
+        _customerFilter.value = filter
+        applyCustomerFilter()
+    }
+
+    private fun applyCustomerFilter() {
+        viewModelScope.launch {
+            val allCustomers = _customers.value
+            val searchQuery = _searchQuery.value
+
+            // First apply search filter
+            val searchFiltered = if (searchQuery.isBlank()) {
+                allCustomers
+            } else {
+                allCustomers.filter { customer ->
+                    customer.name.contains(searchQuery, ignoreCase = true) ||
+                    customer.mobileNumber?.contains(searchQuery) == true
+                }
             }
+
+            // Then apply customer filter
+            val finalFiltered = when (_customerFilter.value) {
+                CustomerFilter.ALL -> searchFiltered
+                CustomerFilter.DUE_TODAY -> searchFiltered.filter { customerHasDueToday(it) }
+                CustomerFilter.OVERDUE -> searchFiltered.filter { customerHasOverdue(it) }
+            }
+
+            _filteredCustomers.value = finalFiltered
         }
+    }
+
+    private suspend fun customerHasDueToday(customer: Customer): Boolean {
+        val customerLoans = _allLoans.value.filter { it.customerId == customer.id && it.status == LoanStatus.ACTIVE }
+        return customerLoans.any { loanHasDueToday(it) }
+    }
+
+    private suspend fun customerHasOverdue(customer: Customer): Boolean {
+        val customerLoans = _allLoans.value.filter { it.customerId == customer.id && it.status == LoanStatus.ACTIVE }
+        return customerLoans.any { loanHasOverdue(it) }
+    }
+
+    private suspend fun loanHasDueToday(loan: Loan): Boolean {
+        val nextDueResult = getNextDueEmiUseCase(loan.id)
+        val nextDueData = when (nextDueResult) {
+            is com.trackloan.common.Result.Success -> nextDueResult.data
+            else -> null
+        }
+
+        if (nextDueData == null) return false // All EMIs paid
+
+        val today = LocalDate.now()
+        val dueDate = nextDueData.dueDate
+
+        return dueDate.isBefore(today.plusDays(2)) && dueDate.isAfter(today.minusDays(2))
+    }
+
+    private suspend fun loanHasOverdue(loan: Loan): Boolean {
+        val nextDueResult = getNextDueEmiUseCase(loan.id)
+        val nextDueData = when (nextDueResult) {
+            is com.trackloan.common.Result.Success -> nextDueResult.data
+            else -> null
+        }
+
+        if (nextDueData == null) return false // All EMIs paid
+
+        val today = LocalDate.now()
+        val dueDate = nextDueData.dueDate
+
+        return dueDate.isBefore(today.minusDays(7)) // Overdue by more than 7 days
     }
 
     fun selectCustomer(customer: Customer) {
@@ -158,7 +257,8 @@ class TransactionFlowViewModel @Inject constructor(
         _loans.value = emptyList()
         _transactions.value = emptyList()
         _searchQuery.value = ""
-        _filteredCustomers.value = _customers.value
+        _customerFilter.value = CustomerFilter.ALL
+        applyCustomerFilter()
     }
 
     fun getLoanSummary(loan: Loan): String {
