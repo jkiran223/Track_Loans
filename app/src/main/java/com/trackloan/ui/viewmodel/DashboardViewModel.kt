@@ -67,27 +67,43 @@ class DashboardViewModel @Inject constructor(
             _uiState.value = UiState.Loading
 
             try {
-                // Load customers
-                customerRepository.observeAllCustomers().collect { customerList ->
-                    _customers.value = customerList
-                    _totalCustomers.value = customerList.size
+                // Start collecting data from repositories (these run continuously)
+                launch {
+                    customerRepository.observeAllCustomers().collect { customerList ->
+                        _customers.value = customerList
+                        _totalCustomers.value = customerList.size
+                        // Set success state after first data load
+                        if (_uiState.value is UiState.Loading) {
+                            _uiState.value = UiState.Success(Unit)
+                        }
+                    }
                 }
 
-                // Load loans
-                loanRepository.observeAllLoans().collect { loanList ->
-                    _loans.value = loanList
-                    _totalActiveLoans.value = loanList.count { it.status == LoanStatus.ACTIVE }
-                    _totalClosedLoans.value = loanList.count { it.status == LoanStatus.CLOSED }
-                    _totalPendingApprovals.value = loanList.count { it.status == LoanStatus.DEFAULTED }
+                launch {
+                    loanRepository.observeAllLoans().collect { loanList ->
+                        _loans.value = loanList
+                        _totalActiveLoans.value = loanList.count { it.status == LoanStatus.ACTIVE }
+                        _totalClosedLoans.value = loanList.count { it.status == LoanStatus.CLOSED }
+                        _totalPendingApprovals.value = loanList.count { it.status == LoanStatus.DEFAULTED }
+                        // Set success state after first data load
+                        if (_uiState.value is UiState.Loading) {
+                            _uiState.value = UiState.Success(Unit)
+                        }
+                    }
                 }
 
-                // Load transactions
-                transactionRepository.observeAllTransactions().collect { transactionList ->
-                    _transactions.value = transactionList
-                    _totalPaid.value = transactionList.count { it.status == TransactionStatus.PAID }
-                    _pendingPayments.value = transactionList.count { it.status == TransactionStatus.DUE }
-                    // TODO: Calculate EMI due today based on due dates
-                    _emiDueToday.value = 0 // Placeholder
+                launch {
+                    transactionRepository.observeAllTransactions().collect { transactionList ->
+                        _transactions.value = transactionList
+                        _totalPaid.value = transactionList.count { it.status == TransactionStatus.PAID }
+                        _pendingPayments.value = transactionList.count { it.status == TransactionStatus.DUE }
+                        // TODO: Calculate EMI due today based on due dates
+                        _emiDueToday.value = 0 // Placeholder
+                        // Set success state after first data load
+                        if (_uiState.value is UiState.Loading) {
+                            _uiState.value = UiState.Success(Unit)
+                        }
+                    }
                 }
 
             } catch (e: Exception) {
