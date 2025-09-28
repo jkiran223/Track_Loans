@@ -24,6 +24,9 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+// Tenure options for dropdown
+private val tenureOptions = listOf(10, 15, 20, 25, 30, 35, 40, 45, 50, 52)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoanDisbursementScreen(
@@ -349,6 +352,7 @@ private fun LoanDisbursementForm(
     modifier: Modifier = Modifier
 ) {
     val formData by viewModel.formData.collectAsState()
+    var tenureExpanded by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
@@ -389,18 +393,39 @@ private fun LoanDisbursementForm(
 
         // EMI Tenure
         item {
-            OutlinedTextField(
-                value = formData.emiTenure.toString(),
-                onValueChange = { viewModel.updateEmiTenure(it) },
-                label = { Text("EMI Tenure") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                trailingIcon = {
-                    Text("weeks", style = MaterialTheme.typography.bodyMedium)
-                },
-                isError = formData.emiTenureError != null,
-                supportingText = { formData.emiTenureError?.let { Text(it) } }
-            )
+            ExposedDropdownMenuBox(
+                expanded = tenureExpanded,
+                onExpandedChange = { tenureExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = formData.emiTenure.toString(),
+                    onValueChange = { viewModel.updateEmiTenure(it) },
+                    label = { Text("EMI Tenure") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = tenureExpanded)
+                    },
+                    isError = formData.emiTenureError != null,
+                    supportingText = { formData.emiTenureError?.let { Text(it) } }
+                )
+                ExposedDropdownMenu(
+                    expanded = tenureExpanded,
+                    onDismissRequest = { tenureExpanded = false }
+                ) {
+                    tenureOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text("$option weeks") },
+                            onClick = {
+                                viewModel.updateEmiTenure(option.toString())
+                                tenureExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
         }
 
         // Repayable Amount (Auto-calculated)
