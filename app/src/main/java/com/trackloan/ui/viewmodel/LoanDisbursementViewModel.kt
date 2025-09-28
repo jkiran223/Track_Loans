@@ -30,6 +30,8 @@ class LoanDisbursementViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _allCustomers = MutableStateFlow<List<Customer>>(emptyList())
+
     private val _searchResults = MutableStateFlow<List<Customer>>(emptyList())
     val searchResults: StateFlow<List<Customer>> = _searchResults.asStateFlow()
 
@@ -74,6 +76,7 @@ class LoanDisbursementViewModel @Inject constructor(
     init {
         setupSearch()
         initializeFormData()
+        loadAllCustomers()
     }
 
     private fun setupSearch() {
@@ -84,7 +87,7 @@ class LoanDisbursementViewModel @Inject constructor(
                 if (query.isNotEmpty()) {
                     searchCustomers(query)
                 } else {
-                    _searchResults.value = emptyList()
+                    _searchResults.value = _allCustomers.value
                 }
             }
             .launchIn(viewModelScope)
@@ -95,6 +98,23 @@ class LoanDisbursementViewModel @Inject constructor(
             emiTenure = 20,
             emiStartDate = getNextWednesday()
         )
+    }
+
+    private fun loadAllCustomers() {
+        viewModelScope.launch {
+            val result = customerRepository.getAllCustomers()
+            when (result) {
+                is Result.Success -> {
+                    _allCustomers.value = result.data
+                    _searchResults.value = result.data // Show all initially
+                }
+                is Result.Error -> {
+                    _allCustomers.value = emptyList()
+                    _searchResults.value = emptyList()
+                }
+                is Result.Loading -> { /* Do nothing */ }
+            }
+        }
     }
 
     private fun getNextWednesday(): LocalDate {
@@ -128,7 +148,6 @@ class LoanDisbursementViewModel @Inject constructor(
     fun selectCustomer(customer: Customer) {
         _selectedCustomer.value = customer
         _searchQuery.value = ""
-        _searchResults.value = emptyList()
     }
 
     fun clearSelectedCustomer() {

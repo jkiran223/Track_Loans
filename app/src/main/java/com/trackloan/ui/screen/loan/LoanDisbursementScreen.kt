@@ -1,3 +1,4 @@
+
 package com.trackloan.ui.screen.loan
 
 import androidx.compose.foundation.layout.*
@@ -147,16 +148,11 @@ private fun CustomerSearchSection(
     onCustomerSelect: (Customer) -> Unit,
     onAddNewCustomer: () -> Unit
 ) {
-    var showSuggestions by remember { mutableStateOf(false) }
-
     Column(modifier = Modifier.fillMaxWidth()) {
         // Search Bar
         OutlinedTextField(
             value = searchQuery,
-            onValueChange = {
-                onSearchQueryChange(it)
-                showSuggestions = it.isNotEmpty()
-            },
+            onValueChange = onSearchQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
@@ -166,10 +162,7 @@ private fun CustomerSearchSection(
             },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = {
-                        onSearchQueryChange("")
-                        showSuggestions = false
-                    }) {
+                    IconButton(onClick = { onSearchQueryChange("") }) {
                         Icon(Icons.Default.Clear, contentDescription = "Clear")
                     }
                 }
@@ -177,8 +170,8 @@ private fun CustomerSearchSection(
             singleLine = true
         )
 
-        // Search Suggestions
-        if (showSuggestions && searchResults.isNotEmpty()) {
+        // Customer List
+        if (searchResults.isNotEmpty()) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -188,17 +181,14 @@ private fun CustomerSearchSection(
                 items(searchResults) { customer ->
                     CustomerSuggestionItem(
                         customer = customer,
-                        onClick = {
-                            onCustomerSelect(customer)
-                            showSuggestions = false
-                        }
+                        onClick = { onCustomerSelect(customer) }
                     )
                 }
             }
         }
 
         // Add New Customer Option (when no results found)
-        if (showSuggestions && searchResults.isEmpty() && searchQuery.isNotEmpty()) {
+        if (searchQuery.isNotEmpty() && searchResults.isEmpty()) {
             OutlinedCard(
                 onClick = onAddNewCustomer,
                 modifier = Modifier
@@ -377,7 +367,7 @@ private fun LoanDisbursementForm(
                     Text("₹", style = MaterialTheme.typography.bodyLarge)
                 },
                 isError = formData.loanAmountError != null,
-                supportingText = formData.loanAmountError?.let { { Text(it) } }
+                supportingText = { formData.loanAmountError?.let { Text(it) } }
             )
         }
 
@@ -393,7 +383,7 @@ private fun LoanDisbursementForm(
                     Text("₹", style = MaterialTheme.typography.bodyLarge)
                 },
                 isError = formData.emiAmountError != null,
-                supportingText = formData.emiAmountError?.let { { Text(it) } }
+                supportingText = { formData.emiAmountError?.let { Text(it) } }
             )
         }
 
@@ -409,7 +399,7 @@ private fun LoanDisbursementForm(
                     Text("weeks", style = MaterialTheme.typography.bodyMedium)
                 },
                 isError = formData.emiTenureError != null,
-                supportingText = formData.emiTenureError?.let { { Text(it) } }
+                supportingText = { formData.emiTenureError?.let { Text(it) } }
             )
         }
 
@@ -466,7 +456,7 @@ private fun LoanDisbursementForm(
                     }
                 },
                 isError = formData.emiStartDateError != null,
-                supportingText = formData.emiStartDateError?.let { { Text(it) } }
+                supportingText = { formData.emiStartDateError?.let { Text(it) } }
             )
         }
 
