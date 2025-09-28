@@ -25,7 +25,7 @@ fun DonutChart(
     modifier: Modifier = Modifier
 ) {
     val total = data.sum()
-    val proportions = data.map { it / total }
+    val proportions = if (total > 0f) data.map { it / total } else data.map { 0f }
 
     var animationPlayed by remember { mutableStateOf(false) }
     val animatedProportions = proportions.map { proportion ->
