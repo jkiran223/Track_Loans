@@ -151,8 +151,9 @@ private fun LoanSummaryCard(
     customer: com.trackloan.domain.model.Customer?,
     transactions: List<com.trackloan.domain.model.Transaction>
 ) {
-    val paidCount = transactions.count { it.status == com.trackloan.domain.model.TransactionStatus.PAID }
-    val progress = if (loan.emiTenure > 0) paidCount.toFloat() / loan.emiTenure.toFloat() else 0f
+    val totalPaid = transactions.filter { it.status == com.trackloan.domain.model.TransactionStatus.PAID }.sumOf { it.amount }
+    val totalRepayable = loan.emiAmount * loan.emiTenure.toDouble()
+    val progress = if (totalRepayable > 0) (totalPaid / totalRepayable).coerceIn(0.0, 1.0).toFloat() else 0f
 
     Card(
         modifier = Modifier
@@ -258,7 +259,7 @@ private fun LoanSummaryCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "$paidCount of ${loan.emiTenure} EMIs paid",
+                    text = "₹${String.format("%.2f", totalPaid)} of ₹${String.format("%.2f", totalRepayable)} paid",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

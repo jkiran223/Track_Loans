@@ -1,8 +1,6 @@
-# TODO: Fix Loan Disbursement Screen Tenure Field
+# TODO: Update Loan Details Screen Progress Bar
 
-## Tasks
-- [x] Modify LoanDisbursementScreen.kt to replace EMI Tenure OutlinedTextField with ExposedDropdownMenuBox
-- [x] Add state for dropdown expansion in the composable
-- [x] Define tenure options: 10, 15, 20, 25, 30, 35, 40, 45, 50, 52 weeks
-- [x] Ensure default value is 20 and allows custom input
-- [ ] Test the changes to ensure functionality works correctly
+- [x] Update LoanSummaryCard in LoanDetailScreen.kt to calculate total paid amount vs repayable amount
+- [x] Change progress calculation from EMI count to amount-based
+- [x] Update progress text to show amounts in rupees
+- [ ] Rebuild project to verify changes
