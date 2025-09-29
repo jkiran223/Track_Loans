@@ -87,47 +87,32 @@ fun LoanDisbursementScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Customer Search Section
-            CustomerSearchSection(
-                searchQuery = searchQuery,
-                searchResults = searchResults,
-                onSearchQueryChange = { viewModel.updateSearchQuery(it) },
-                onCustomerSelect = { viewModel.selectCustomer(it) },
-                onAddNewCustomer = {
-                    // Navigate to customer list with add mode
-                    navController.navigate(NavRoutes.CustomerList.route)
-                }
-            )
-
-            // Sticky Customer Details (if selected)
-            selectedCustomer?.let { customer ->
+            if (selectedCustomer == null) {
+                // Customer Search Section (full screen)
+                CustomerSearchSection(
+                    searchQuery = searchQuery,
+                    searchResults = searchResults,
+                    onSearchQueryChange = { viewModel.updateSearchQuery(it) },
+                    onCustomerSelect = { viewModel.selectCustomer(it) },
+                    onAddNewCustomer = {
+                        // Navigate to customer list with add mode
+                        navController.navigate(NavRoutes.CustomerList.route)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                // Customer Details and Loan Disbursement Form
+                val customer = selectedCustomer!!
                 CustomerDetailsStickySheet(
                     customer = customer,
                     onClose = { viewModel.clearSelectedCustomer() }
                 )
-            }
 
-            // Loan Disbursement Form (only show if customer is selected)
-            if (selectedCustomer != null) {
                 LoanDisbursementForm(
                     viewModel = viewModel,
                     isFormValid = isFormValid,
                     modifier = Modifier.weight(1f)
                 )
-            } else {
-                // Empty state when no customer selected
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Search and select a customer to disburse a loan",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
         }
     }
@@ -149,9 +134,10 @@ private fun CustomerSearchSection(
     searchResults: List<Customer>,
     onSearchQueryChange: (String) -> Unit,
     onCustomerSelect: (Customer) -> Unit,
-    onAddNewCustomer: () -> Unit
+    onAddNewCustomer: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxSize()) {
         // Search Bar
         OutlinedTextField(
             value = searchQuery,
@@ -178,7 +164,7 @@ private fun CustomerSearchSection(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 200.dp),
+                    .weight(1f),
                 contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
                 items(searchResults) { customer ->

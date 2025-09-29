@@ -1,3 +1,3 @@
-- [x] Remove TransactionCard from tablet layout in DashboardScreen.kt
-- [x] Remove TransactionCard from mobile layout in DashboardScreen.kt
-- [x] Remove the import for TransactionCard in DashboardScreen.kt
+- [x] Modify LoanDisbursementScreen.kt to show full screen customer list with search when no customer selected
+- [x] Hide customer list and search when customer is selected, show customer details in top sheet and loan disbursement form
+- [x] Test the UI flow: full screen list -> select customer -> hide list, show details + form
