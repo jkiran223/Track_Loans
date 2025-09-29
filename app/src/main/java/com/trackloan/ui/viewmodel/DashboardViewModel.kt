@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,6 +58,18 @@ class DashboardViewModel @Inject constructor(
 
     private val _activeCustomers = MutableStateFlow(0)
     val activeCustomers: StateFlow<Int> = _activeCustomers.asStateFlow()
+
+    private val _dueLoansToday = MutableStateFlow(0)
+    val dueLoansToday: StateFlow<Int> = _dueLoansToday.asStateFlow()
+
+    private val _paidLoansToday = MutableStateFlow(0)
+    val paidLoansToday: StateFlow<Int> = _paidLoansToday.asStateFlow()
+
+    private val _dueAmountToday = MutableStateFlow(0.0)
+    val dueAmountToday: StateFlow<Double> = _dueAmountToday.asStateFlow()
+
+    private val _collectionToday = MutableStateFlow(0.0)
+    val collectionToday: StateFlow<Double> = _collectionToday.asStateFlow()
 
     private val _uiState = MutableStateFlow<UiState<Unit>>(UiState.Loading)
     val uiState: StateFlow<UiState<Unit>> = _uiState.asStateFlow()
@@ -101,8 +114,34 @@ class DashboardViewModel @Inject constructor(
                         _transactions.value = transactionList
                         _totalPaid.value = transactionList.count { it.status == TransactionStatus.PAID }
                         _pendingPayments.value = transactionList.count { it.status == TransactionStatus.DUE }
-                        // TODO: Calculate EMI due today based on due dates
-                        _emiDueToday.value = 0 // Placeholder
+
+                        // Calculate today's metrics
+                        val today = LocalDate.now()
+                        val paidToday = transactionList.filter { it.status == TransactionStatus.PAID && it.paymentDate.toLocalDate() == today }
+                        _paidLoansToday.value = paidToday.map { it.loanId }.distinct().size
+                        _collectionToday.value = paidToday.sumOf { it.amount }
+
+                        // Calculate due loans today
+                        val activeLoans = _loans.value.filter { it.status == LoanStatus.ACTIVE }
+                        val transactionsByLoan = transactionList.groupBy { it.loanId }
+                        var dueLoansCount = 0
+                        var dueAmount = 0.0
+                        for (loan in activeLoans) {
+                            val paidCount = transactionsByLoan[loan.id]?.count { it.status == TransactionStatus.PAID } ?: 0
+                            if (paidCount < loan.emiTenure) {
+                                val nextEmiNumber = paidCount + 1
+                                val emiStartDate = loan.emiStartDate.toLocalDate()
+                                // Assuming weekly for now, as per GetNextDueEmiUseCase
+                                val dueDate = emiStartDate.plusWeeks((nextEmiNumber - 1).toLong())
+                                if (dueDate <= today) {
+                                    dueLoansCount++
+                                    dueAmount += loan.emiAmount
+                                }
+                            }
+                        }
+                        _dueLoansToday.value = dueLoansCount
+                        _dueAmountToday.value = dueAmount
+
                         // Set success state after first data load
                         if (_uiState.value is UiState.Loading) {
                             _uiState.value = UiState.Success(Unit)

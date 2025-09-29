@@ -37,15 +37,11 @@ fun DashboardScreen(
     val emiDueToday by viewModel.emiDueToday.collectAsState()
     val totalPaid by viewModel.totalPaid.collectAsState()
     val pendingPayments by viewModel.pendingPayments.collectAsState()
+    val dueLoansToday by viewModel.dueLoansToday.collectAsState()
+    val paidLoansToday by viewModel.paidLoansToday.collectAsState()
+    val dueAmountToday by viewModel.dueAmountToday.collectAsState()
+    val collectionToday by viewModel.collectionToday.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
-
-    val loansDisbursedToday = 5 // Placeholder - would need actual daily data
-    val loansClosingToday = 3 // Placeholder - would need actual daily data
-
-    val totalDueAmountToday = 25000f // Placeholder
-    val collectedAmountToday = 18000f // Placeholder
-    val pendingCollectionToday = totalDueAmountToday - collectedAmountToday
-    val overdueAmount = 5000f // Placeholder
 
     Scaffold(
         topBar = {
@@ -103,13 +99,11 @@ fun DashboardScreen(
                         totalCustomers = totalCustomers,
                         activeCustomers = activeCustomers,
                         activeLoans = totalActiveLoans,
-                        loansDisbursedToday = loansDisbursedToday,
-                        loansClosingToday = loansClosingToday,
+                        dueLoansToday = dueLoansToday,
+                        paidLoansToday = paidLoansToday,
+                        dueAmountToday = dueAmountToday,
+                        collectionToday = collectionToday,
                         totalDuesToday = emiDueToday,
-                        totalDueAmountToday = totalDueAmountToday,
-                        collectedAmountToday = collectedAmountToday,
-                        pendingCollectionToday = pendingCollectionToday,
-                        overdueAmount = overdueAmount,
                         screenWidth = screenWidth,
                         navController = navController
                     )
@@ -124,13 +118,11 @@ private fun DashboardContent(
     totalCustomers: Int,
     activeCustomers: Int,
     activeLoans: Int,
-    loansDisbursedToday: Int,
-    loansClosingToday: Int,
+    dueLoansToday: Int,
+    paidLoansToday: Int,
+    dueAmountToday: Double,
+    collectionToday: Double,
     totalDuesToday: Int,
-    totalDueAmountToday: Float,
-    collectedAmountToday: Float,
-    pendingCollectionToday: Float,
-    overdueAmount: Float,
     screenWidth: androidx.compose.ui.unit.Dp,
     navController: NavController
 ) {
@@ -163,8 +155,10 @@ private fun DashboardContent(
                             )
                             LoanCard(
                                 activeLoans = activeLoans,
-                                loansDisbursedToday = loansDisbursedToday,
-                                loansClosingToday = loansClosingToday,
+                                dueLoans = dueLoansToday,
+                                paidLoans = paidLoansToday,
+                                dueAmount = dueAmountToday,
+                                collection = collectionToday,
                                 onClick = { navController.navigate(NavRoutes.LoanDisbursement.route) }
                             )
                         }
@@ -174,10 +168,10 @@ private fun DashboardContent(
                         ) {
                             TransactionCard(
                                 totalDuesToday = totalDuesToday,
-                                totalDueAmountToday = totalDueAmountToday,
-                                collectedAmountToday = collectedAmountToday,
-                                pendingCollectionToday = pendingCollectionToday,
-                                overdueAmount = overdueAmount,
+                                totalDueAmountToday = dueAmountToday.toFloat(),
+                                collectedAmountToday = collectionToday.toFloat(),
+                                pendingCollectionToday = (dueAmountToday - collectionToday).toFloat(),
+                                overdueAmount = 0f, // TODO: Calculate overdue amount
                                 onClick = { navController.navigate(NavRoutes.TransactionFlow.route) }
                             )
                         }
@@ -191,16 +185,18 @@ private fun DashboardContent(
                     )
                     LoanCard(
                         activeLoans = activeLoans,
-                        loansDisbursedToday = loansDisbursedToday,
-                        loansClosingToday = loansClosingToday,
+                        dueLoans = dueLoansToday,
+                        paidLoans = paidLoansToday,
+                        dueAmount = dueAmountToday,
+                        collection = collectionToday,
                         onClick = { navController.navigate(NavRoutes.LoanDisbursement.route) }
                     )
                     TransactionCard(
                         totalDuesToday = totalDuesToday,
-                        totalDueAmountToday = totalDueAmountToday,
-                        collectedAmountToday = collectedAmountToday,
-                        pendingCollectionToday = pendingCollectionToday,
-                        overdueAmount = overdueAmount,
+                        totalDueAmountToday = dueAmountToday.toFloat(),
+                        collectedAmountToday = collectionToday.toFloat(),
+                        pendingCollectionToday = (dueAmountToday - collectionToday).toFloat(),
+                        overdueAmount = 0f, // TODO: Calculate overdue amount
                         onClick = { navController.navigate(NavRoutes.TransactionFlow.route) }
                     )
                 }

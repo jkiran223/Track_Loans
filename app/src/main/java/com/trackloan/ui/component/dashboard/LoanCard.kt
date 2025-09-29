@@ -17,8 +17,10 @@ import com.trackloan.ui.theme.Orange
 @Composable
 fun LoanCard(
     activeLoans: Int,
-    loansDisbursedToday: Int,
-    loansClosingToday: Int,
+    dueLoans: Int,
+    paidLoans: Int,
+    dueAmount: Double,
+    collection: Double,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
@@ -79,28 +81,41 @@ fun LoanCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 LoanStatItem(
-                    label = "Disbursed Today",
-                    value = loansDisbursedToday,
-                    color = Green,
+                    label = "Due Loans Today",
+                    value = dueLoans.toString(),
+                    color = Orange,
                     modifier = Modifier.weight(1f)
                 )
                 LoanStatItem(
-                    label = "Closing Today",
-                    value = loansClosingToday,
-                    color = Orange,
+                    label = "Paid Loans Today",
+                    value = paidLoans.toString(),
+                    color = Green,
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            // Bar Chart
-            BarChart(
-                data = listOf(
-                    loansDisbursedToday.toFloat(),
-                    loansClosingToday.toFloat()
-                ),
-                labels = listOf("Disbursed", "Closing"),
-                colors = listOf(Green, Orange),
-                height = 50.dp,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                LoanStatItem(
+                    label = "Due Amount Today",
+                    value = "₹${dueAmount.toInt()}",
+                    color = Orange,
+                    modifier = Modifier.weight(1f)
+                )
+                LoanStatItem(
+                    label = "Collection Today",
+                    value = "₹${collection.toInt()}",
+                    color = Green,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Progress Bar
+            ProgressBar(
+                collected = collection.toFloat(),
+                expected = dueAmount.toFloat(),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -110,7 +125,7 @@ fun LoanCard(
 @Composable
 private fun LoanStatItem(
     label: String,
-    value: Int,
+    value: String,
     color: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier
 ) {
@@ -120,7 +135,7 @@ private fun LoanStatItem(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = value.toString(),
+            text = value,
             style = MaterialTheme.typography.headlineSmall,
             color = color
         )
