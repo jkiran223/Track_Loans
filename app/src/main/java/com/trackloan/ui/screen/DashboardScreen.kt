@@ -15,7 +15,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.trackloan.ui.component.dashboard.CustomerCard
 import com.trackloan.ui.component.dashboard.LoanCard
-import com.trackloan.ui.component.dashboard.TransactionCard
 import com.trackloan.ui.navigation.NavRoutes
 import com.trackloan.ui.viewmodel.DashboardViewModel
 
@@ -162,19 +161,7 @@ private fun DashboardContent(
                                 onClick = { navController.navigate(NavRoutes.LoanDisbursement.route) }
                             )
                         }
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            TransactionCard(
-                                totalDuesToday = totalDuesToday,
-                                totalDueAmountToday = dueAmountToday.toFloat(),
-                                collectedAmountToday = collectionToday.toFloat(),
-                                pendingCollectionToday = (dueAmountToday - collectionToday).toFloat(),
-                                overdueAmount = 0f, // TODO: Calculate overdue amount
-                                onClick = { navController.navigate(NavRoutes.TransactionFlow.route) }
-                            )
-                        }
+
                     }
                 } else {
                     // Mobile: Single column
@@ -191,14 +178,7 @@ private fun DashboardContent(
                         collection = collectionToday,
                         onClick = { navController.navigate(NavRoutes.LoanDisbursement.route) }
                     )
-                    TransactionCard(
-                        totalDuesToday = totalDuesToday,
-                        totalDueAmountToday = dueAmountToday.toFloat(),
-                        collectedAmountToday = collectionToday.toFloat(),
-                        pendingCollectionToday = (dueAmountToday - collectionToday).toFloat(),
-                        overdueAmount = 0f, // TODO: Calculate overdue amount
-                        onClick = { navController.navigate(NavRoutes.TransactionFlow.route) }
-                    )
+
                 }
     }
 }
