@@ -67,7 +67,7 @@ class TransactionFlowViewModel @Inject constructor(
     private val _loanFilter = MutableStateFlow(LoanFilter.ACTIVE)
     val loanFilter: StateFlow<LoanFilter> = _loanFilter.asStateFlow()
 
-    private val _customerFilter = MutableStateFlow(CustomerFilter.ALL)
+    private val _customerFilter = MutableStateFlow(CustomerFilter.DUE_TODAY)
     val customerFilter: StateFlow<CustomerFilter> = _customerFilter.asStateFlow()
 
     private val _allLoans = MutableStateFlow<List<Loan>>(emptyList())

@@ -1,3 +1,4 @@
+
 package com.trackloan.ui.screen
 
 import androidx.compose.foundation.layout.*
@@ -163,7 +164,7 @@ private fun DashboardContent(
                                 paidLoans = paidLoansToday,
                                 dueAmount = dueAmountToday,
                                 collection = collectionToday,
-                                onClick = { navController.navigate(NavRoutes.LoanDisbursement.route) }
+                                onClick = { navController.navigate(NavRoutes.TransactionFlow.route) }
                             )
                         }
 
@@ -181,7 +182,7 @@ private fun DashboardContent(
                         paidLoans = paidLoansToday,
                         dueAmount = dueAmountToday,
                         collection = collectionToday,
-                        onClick = { navController.navigate(NavRoutes.LoanDisbursement.route) }
+                        onClick = { navController.navigate(NavRoutes.TransactionFlow.route) }
                     )
 
                 }
