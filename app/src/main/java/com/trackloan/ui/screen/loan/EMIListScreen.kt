@@ -132,6 +132,10 @@ fun EMIListScreen(
             onPaymentSuccess = {
                 viewModel.dismissPaymentSheet()
                 viewModel.loadEMIList(loanId) // Refresh data
+            },
+            onPostponeSuccess = {
+                viewModel.dismissPaymentSheet()
+                viewModel.loadEMIList(loanId) // Refresh data
             }
         )
     }

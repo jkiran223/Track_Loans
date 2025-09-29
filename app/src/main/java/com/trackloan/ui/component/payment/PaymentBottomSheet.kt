@@ -32,19 +32,21 @@ fun PaymentBottomSheet(
     loanId: Long,
     onDismiss: () -> Unit,
     onPaymentSuccess: () -> Unit,
+    onPostponeSuccess: () -> Unit = {},
     viewModel: PaymentViewModel = hiltViewModel()
 ) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val uiState by viewModel.uiState.collectAsState()
     val nextEmi by viewModel.nextEmi.collectAsState()
     val paymentForm by viewModel.paymentForm.collectAsState()
     val showConfirmation by viewModel.showConfirmation.collectAsState()
+    val showPostponeConfirmation by viewModel.showPostponeConfirmation.collectAsState()
     val isExpanded by viewModel.isExpanded.collectAsState()
     val isLastPayment by viewModel.isLastPayment.collectAsState()
-
-
+    val postponeSuccess by viewModel.postponeSuccess.collectAsState()
 
     // Handle UI state changes
     LaunchedEffect(uiState) {
@@ -66,6 +68,35 @@ fun PaymentBottomSheet(
         }
     }
 
+    // Handle postpone success
+    LaunchedEffect(postponeSuccess) {
+        if (postponeSuccess) {
+            val processingTime = viewModel.processingTime.value
+            if (processingTime > 0) {
+                kotlinx.coroutines.delay(processingTime)
+            }
+
+            // Show snackbar message asynchronously
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = "EMI postponed successfully! 📅",
+                    duration = SnackbarDuration.Short
+                )
+            }
+
+            // Reset the postpone success state
+            viewModel.resetPostponeSuccess()
+
+            // Dismiss bottom sheet after success message
+            scope.launch {
+                kotlinx.coroutines.delay(500) // Small delay to show the message
+                sheetState.hide()
+                onDismiss()
+                onPostponeSuccess() // Notify parent to refresh loan list or UI
+            }
+        }
+    }
+
     // Load next EMI when sheet opens
     LaunchedEffect(loanId) {
         viewModel.loadNextEmi(loanId)
@@ -76,49 +107,55 @@ fun PaymentBottomSheet(
         sheetState = sheetState,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp)
-        ) {
-            // Header
-            Text(
-                text = "Make Payment",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            // Main Content
-            if (!isExpanded) {
-                // Collapsed State - Quick Pay and Pay Now buttons
-                QuickPaySection(
-                    nextEmi = nextEmi,
-                    onQuickPayClick = { viewModel.showQuickPayConfirmation() },
-                    onPayNowClick = { viewModel.expandSheet() }
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp)
+                    .padding(paddingValues)
+            ) {
+                // Header
+                Text(
+                    text = "Make Payment",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-            } else {
-                // Expanded State - Payment Form
-                PaymentFormSection(
-                    paymentForm = paymentForm,
-                    nextEmi = nextEmi,
-                    onAmountChange = { viewModel.updatePaymentAmount(it) },
-                    onDateChange = { viewModel.updatePaymentDate(it) },
-                    onShowDatePicker = { viewModel.showDatePicker() },
-                    onPayClick = { viewModel.showPaymentConfirmation() },
-                    onCollapse = { viewModel.collapseSheet() }
-                )
-            }
 
-            // Loading indicator
-            if (uiState is com.trackloan.common.UiState.Loading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+                // Main Content
+                if (!isExpanded) {
+                    // Collapsed State - Quick Pay and Pay Now buttons
+                    QuickPaySection(
+                        nextEmi = nextEmi,
+                        onQuickPayClick = { viewModel.showQuickPayConfirmation() },
+                        onPayNowClick = { viewModel.expandSheet() },
+                        onPostponeClick = { viewModel.showPostponeConfirmation() }
+                    )
+                } else {
+                    // Expanded State - Payment Form
+                    PaymentFormSection(
+                        paymentForm = paymentForm,
+                        nextEmi = nextEmi,
+                        onAmountChange = { viewModel.updatePaymentAmount(it) },
+                        onDateChange = { viewModel.updatePaymentDate(it) },
+                        onShowDatePicker = { viewModel.showDatePicker() },
+                        onPayClick = { viewModel.showPaymentConfirmation() },
+                        onCollapse = { viewModel.collapseSheet() }
+                    )
+                }
+
+                // Loading indicator
+                if (uiState is com.trackloan.common.UiState.Loading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }
@@ -156,6 +193,15 @@ fun PaymentBottomSheet(
                 onDismiss = { viewModel.dismissConfirmation() }
             )
         }
+
+        // Postpone Confirmation Dialog
+        if (showPostponeConfirmation) {
+            PostponeConfirmationDialog(
+                nextEmi = nextEmi,
+                onConfirm = { viewModel.processPostpone() },
+                onDismiss = { viewModel.dismissPostponeConfirmation() }
+            )
+        }
     }
 }
 
@@ -163,7 +209,8 @@ fun PaymentBottomSheet(
 private fun QuickPaySection(
     nextEmi: PaymentViewModel.NextEmiData?,
     onQuickPayClick: () -> Unit,
-    onPayNowClick: () -> Unit
+    onPayNowClick: () -> Unit,
+    onPostponeClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -207,6 +254,27 @@ private fun QuickPaySection(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Pay Now")
+            }
+        }
+
+        // Postpone Button
+        OutlinedButton(
+            onClick = onPostponeClick,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = nextEmi != null
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Schedule,
+                    contentDescription = "Postpone EMI",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Postpone EMI")
             }
         }
 
@@ -510,6 +578,87 @@ private fun PaymentConfirmationDialog(
                         else -> "Confirm Payment"
                     }
                 )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PostponeConfirmationDialog(
+    nextEmi: PaymentViewModel.NextEmiData?,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.Schedule,
+                    contentDescription = "Postpone EMI",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text("Confirm Postpone EMI")
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                nextEmi?.let { emi ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "EMI ${emi.emiNumber} Postponement",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            Text(
+                                text = "Current Due Date: ${emi.dueDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+
+                            Text(
+                                text = "New Due Date: ${emi.dueDate.plusDays(7).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            Text(
+                                text = "Amount: ₹${emi.amount}",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "⚠️ This will postpone this EMI and reschedule all subsequent EMIs by 1 week.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Confirm Postpone")
             }
         },
         dismissButton = {

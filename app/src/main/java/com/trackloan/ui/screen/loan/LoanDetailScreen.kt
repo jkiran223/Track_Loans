@@ -140,6 +140,10 @@ fun LoanDetailScreen(
             onPaymentSuccess = {
                 viewModel.dismissPaymentSheet()
                 viewModel.loadLoanDetails(loanId) // Refresh data
+            },
+            onPostponeSuccess = {
+                viewModel.dismissPaymentSheet()
+                viewModel.loadLoanDetails(loanId) // Refresh data
             }
         )
     }

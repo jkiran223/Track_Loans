@@ -23,7 +23,8 @@ import javax.inject.Inject
 class PaymentViewModel @Inject constructor(
     private val getNextDueEmiUseCase: GetNextDueEmiUseCase,
     private val processPaymentUseCase: ProcessPaymentUseCase,
-    private val checkLastPaymentUseCase: com.trackloan.domain.usecase.transaction.CheckLastPaymentUseCase
+    private val checkLastPaymentUseCase: com.trackloan.domain.usecase.transaction.CheckLastPaymentUseCase,
+    private val postponeEmiUseCase: com.trackloan.domain.usecase.transaction.PostponeEmiUseCase
 ) : ViewModel() {
 
     // UI State
@@ -49,6 +50,13 @@ class PaymentViewModel @Inject constructor(
     // Dialog states
     private val _showConfirmation = MutableStateFlow(false)
     val showConfirmation: StateFlow<Boolean> = _showConfirmation.asStateFlow()
+
+    private val _showPostponeConfirmation = MutableStateFlow(false)
+    val showPostponeConfirmation: StateFlow<Boolean> = _showPostponeConfirmation.asStateFlow()
+
+    // Postpone success state
+    private val _postponeSuccess = MutableStateFlow(false)
+    val postponeSuccess: StateFlow<Boolean> = _postponeSuccess.asStateFlow()
 
     val showDatePickerDialog = mutableStateOf(false)
     val datePickerState = DatePickerState(
@@ -196,6 +204,44 @@ class PaymentViewModel @Inject constructor(
         _showConfirmation.value = false
     }
 
+    fun showPostponeConfirmation() {
+        _showPostponeConfirmation.value = true
+    }
+
+    fun dismissPostponeConfirmation() {
+        _showPostponeConfirmation.value = false
+    }
+
+    fun processPostpone() {
+        val startTime = System.currentTimeMillis()
+        viewModelScope.launch {
+            _uiState.value = UiState.Loading
+            _showPostponeConfirmation.value = false
+
+            try {
+                val result = postponeEmiUseCase(currentLoanId, 7) // Postpone by 1 week
+
+                when (result) {
+                    is Result.Success -> {
+                        val elapsed = System.currentTimeMillis() - startTime
+                        _processingTime.value = elapsed
+                        _postponeSuccess.value = true
+                        // Reload next EMI to reflect the postponement
+                        loadNextEmi(currentLoanId)
+                    }
+                    is Result.Error -> {
+                        _uiState.value = UiState.Error(result.exception.message ?: "Failed to postpone EMI")
+                    }
+                    is Result.Loading -> {
+                        // Do nothing
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.value = UiState.Error(e.message ?: "Unknown error occurred")
+            }
+        }
+    }
+
     private val _isLastPayment = MutableStateFlow(false)
     val isLastPayment: StateFlow<Boolean> = _isLastPayment.asStateFlow()
 
@@ -267,6 +313,10 @@ class PaymentViewModel @Inject constructor(
             date.isBefore(today.minusDays(30)) -> "Payment date cannot be more than 30 days in the past"
             else -> null
         }
+    }
+
+    fun resetPostponeSuccess() {
+        _postponeSuccess.value = false
     }
 
     data class NextEmiData(

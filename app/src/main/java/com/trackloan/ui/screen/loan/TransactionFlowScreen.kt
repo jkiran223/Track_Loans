@@ -72,6 +72,7 @@ fun TransactionFlowScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showSuccessSnackbar by remember { mutableStateOf(false) }
+    var showPostponeSuccessSnackbar by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -318,6 +319,19 @@ fun TransactionFlowScreen(
         }
     }
 
+    // Show success snackbar when postpone completes
+    LaunchedEffect(showPostponeSuccessSnackbar) {
+        if (showPostponeSuccessSnackbar) {
+            // Add a small delay to sync with postpone processing time if needed
+            kotlinx.coroutines.delay(300) // 300ms delay, adjust as needed
+            snackbarHostState.showSnackbar(
+                message = "EMI postponed successfully! ⏰",
+                duration = SnackbarDuration.Short
+            )
+            showPostponeSuccessSnackbar = false
+        }
+    }
+
     if (showPaymentBottomSheet && selectedLoanForPayment != null) {
         val loan = selectedLoanForPayment!!
         PaymentBottomSheet(
@@ -328,6 +342,12 @@ fun TransactionFlowScreen(
                 // Refresh transactions and loans after payment success for live effect
                 viewModel.selectCustomer(viewModel.selectedCustomer.value!!)
                 showSuccessSnackbar = true
+            },
+            onPostponeSuccess = {
+                viewModel.dismissPaymentBottomSheet()
+                // Refresh transactions and loans after postpone success for live effect
+                viewModel.selectCustomer(viewModel.selectedCustomer.value!!)
+                showPostponeSuccessSnackbar = true
             }
         )
     }
