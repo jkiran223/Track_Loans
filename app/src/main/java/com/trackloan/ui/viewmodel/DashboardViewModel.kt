@@ -55,6 +55,9 @@ class DashboardViewModel @Inject constructor(
     private val _pendingPayments = MutableStateFlow(0)
     val pendingPayments: StateFlow<Int> = _pendingPayments.asStateFlow()
 
+    private val _activeCustomers = MutableStateFlow(0)
+    val activeCustomers: StateFlow<Int> = _activeCustomers.asStateFlow()
+
     private val _uiState = MutableStateFlow<UiState<Unit>>(UiState.Loading)
     val uiState: StateFlow<UiState<Unit>> = _uiState.asStateFlow()
 
@@ -85,6 +88,7 @@ class DashboardViewModel @Inject constructor(
                         _totalActiveLoans.value = loanList.count { it.status == LoanStatus.ACTIVE }
                         _totalClosedLoans.value = loanList.count { it.status == LoanStatus.CLOSED }
                         _totalPendingApprovals.value = loanList.count { it.status == LoanStatus.DEFAULTED }
+                        _activeCustomers.value = loanList.filter { it.status == LoanStatus.ACTIVE }.map { it.customerId }.distinct().size
                         // Set success state after first data load
                         if (_uiState.value is UiState.Loading) {
                             _uiState.value = UiState.Success(Unit)

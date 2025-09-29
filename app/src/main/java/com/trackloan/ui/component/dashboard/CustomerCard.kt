@@ -10,17 +10,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
-import com.trackloan.ui.theme.Green
-import com.trackloan.ui.theme.Orange
-import com.trackloan.ui.theme.Red
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerCard(
     totalCustomers: Int,
     activeCustomers: Int,
-    dueTodayCustomers: Int,
-    overdueCustomers: Int,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
@@ -68,102 +63,23 @@ fun CustomerCard(
                 modifier = Modifier.align(Alignment.Start)
             )
 
-            // Sub-stats
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                StatBadge(
-                    label = "Active",
-                    value = activeCustomers,
-                    color = Green,
-                    modifier = Modifier.weight(1f)
-                )
-                StatBadge(
-                    label = "Due Today",
-                    value = dueTodayCustomers,
-                    color = Orange,
-                    modifier = Modifier.weight(1f)
-                )
-                StatBadge(
-                    label = "Overdue",
-                    value = overdueCustomers,
-                    color = Red,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            // Active Customers
+            Text(
+                text = "Active: $activeCustomers",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.Start)
+            )
 
-            // Donut Chart
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                DonutChart(
-                    data = listOf(
-                        activeCustomers.toFloat(),
-                        dueTodayCustomers.toFloat(),
-                        overdueCustomers.toFloat()
-                    ),
-                    size = 60.dp
-                )
-
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    ChartLegendItem("Active", Green)
-                    ChartLegendItem("Due Today", Orange)
-                    ChartLegendItem("Overdue", Red)
-                }
-            }
+            // Progress Bar
+            LinearProgressIndicator(
+                progress = if (totalCustomers > 0) activeCustomers.toFloat() / totalCustomers else 0f,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.primaryContainer
+            )
         }
-    }
-}
-
-@Composable
-private fun StatBadge(
-    label: String,
-    value: Int,
-    color: androidx.compose.ui.graphics.Color,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = value.toString(),
-            style = MaterialTheme.typography.titleLarge,
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun ChartLegendItem(
-    label: String,
-    color: androidx.compose.ui.graphics.Color
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        androidx.compose.foundation.Canvas(
-            modifier = Modifier.size(8.dp)
-        ) {
-            drawCircle(color = color)
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }

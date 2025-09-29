@@ -30,6 +30,7 @@ fun DashboardScreen(
 
     // Collect data from ViewModel
     val totalCustomers by viewModel.totalCustomers.collectAsState()
+    val activeCustomers by viewModel.activeCustomers.collectAsState()
     val totalActiveLoans by viewModel.totalActiveLoans.collectAsState()
     val totalClosedLoans by viewModel.totalClosedLoans.collectAsState()
     val totalPendingApprovals by viewModel.totalPendingApprovals.collectAsState()
@@ -37,11 +38,6 @@ fun DashboardScreen(
     val totalPaid by viewModel.totalPaid.collectAsState()
     val pendingPayments by viewModel.pendingPayments.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
-
-    // Calculate derived stats for cards
-    val activeCustomers = totalCustomers - (totalClosedLoans + totalPendingApprovals) // Approximation
-    val dueTodayCustomers = emiDueToday // Using EMI due as proxy
-    val overdueCustomers = totalPendingApprovals
 
     val loansDisbursedToday = 5 // Placeholder - would need actual daily data
     val loansClosingToday = 3 // Placeholder - would need actual daily data
@@ -106,8 +102,6 @@ fun DashboardScreen(
                     DashboardContent(
                         totalCustomers = totalCustomers,
                         activeCustomers = activeCustomers,
-                        dueTodayCustomers = dueTodayCustomers,
-                        overdueCustomers = overdueCustomers,
                         activeLoans = totalActiveLoans,
                         loansDisbursedToday = loansDisbursedToday,
                         loansClosingToday = loansClosingToday,
@@ -129,8 +123,6 @@ fun DashboardScreen(
 private fun DashboardContent(
     totalCustomers: Int,
     activeCustomers: Int,
-    dueTodayCustomers: Int,
-    overdueCustomers: Int,
     activeLoans: Int,
     loansDisbursedToday: Int,
     loansClosingToday: Int,
@@ -167,8 +159,6 @@ private fun DashboardContent(
                             CustomerCard(
                                 totalCustomers = totalCustomers,
                                 activeCustomers = activeCustomers,
-                                dueTodayCustomers = dueTodayCustomers,
-                                overdueCustomers = overdueCustomers,
                                 onClick = { navController.navigate(NavRoutes.CustomerList.route) }
                             )
                             LoanCard(
@@ -197,8 +187,6 @@ private fun DashboardContent(
                     CustomerCard(
                         totalCustomers = totalCustomers,
                         activeCustomers = activeCustomers,
-                        dueTodayCustomers = dueTodayCustomers,
-                        overdueCustomers = overdueCustomers,
                         onClick = { navController.navigate(NavRoutes.CustomerList.route) }
                     )
                     LoanCard(
