@@ -27,6 +27,11 @@ fun DashboardScreen(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
 
+    // Refresh data every time the screen is opened
+    LaunchedEffect(Unit) {
+        viewModel.refreshData()
+    }
+
     // Collect data from ViewModel
     val totalCustomers by viewModel.totalCustomers.collectAsState()
     val activeCustomers by viewModel.activeCustomers.collectAsState()
