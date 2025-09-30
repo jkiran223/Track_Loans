@@ -116,12 +116,6 @@ fun LoanDisbursementScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "EMI Type: Weekly",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
                 }
 
                 LoanDisbursementForm(
