@@ -14,16 +14,19 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.trackloan.ui.component.dashboard.BackupCard
 import com.trackloan.ui.component.dashboard.CustomerCard
 import com.trackloan.ui.component.dashboard.LoanCard
 import com.trackloan.ui.navigation.NavRoutes
+import com.trackloan.ui.viewmodel.BackupViewModel
 import com.trackloan.ui.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     navController: NavController,
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardViewModel = hiltViewModel(),
+    backupViewModel: BackupViewModel = hiltViewModel()
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -47,6 +50,8 @@ fun DashboardScreen(
     val dueAmountToday by viewModel.dueAmountToday.collectAsState()
     val collectionToday by viewModel.collectionToday.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+
+    val lastBackupTimestamp by backupViewModel.lastBackupTimestamp.collectAsState()
 
     Scaffold(
         topBar = {
@@ -110,7 +115,8 @@ fun DashboardScreen(
                         collectionToday = collectionToday,
                         totalDuesToday = emiDueToday,
                         screenWidth = screenWidth,
-                        navController = navController
+                        navController = navController,
+                        lastBackupTimestamp = lastBackupTimestamp
                     )
                 }
             }
@@ -129,7 +135,8 @@ private fun DashboardContent(
     collectionToday: Double,
     totalDuesToday: Int,
     screenWidth: androidx.compose.ui.unit.Dp,
-    navController: NavController
+    navController: NavController,
+    lastBackupTimestamp: Long?
 ) {
     val scrollState = rememberScrollState()
 
@@ -166,6 +173,11 @@ private fun DashboardContent(
                                 collection = collectionToday,
                                 onClick = { navController.navigate(NavRoutes.TransactionFlow.route) }
                             )
+                            BackupCard(
+                                lastBackupTimestamp = lastBackupTimestamp,
+                                onBackupClick = { navController.navigate(NavRoutes.BackupRestore.route) },
+                                onRestoreClick = { navController.navigate(NavRoutes.BackupRestore.route) }
+                            )
                         }
 
                     }
@@ -183,6 +195,11 @@ private fun DashboardContent(
                         dueAmount = dueAmountToday,
                         collection = collectionToday,
                         onClick = { navController.navigate(NavRoutes.TransactionFlow.route) }
+                    )
+                    BackupCard(
+                        lastBackupTimestamp = lastBackupTimestamp,
+                        onBackupClick = { navController.navigate(NavRoutes.BackupRestore.route) },
+                        onRestoreClick = { navController.navigate(NavRoutes.BackupRestore.route) }
                     )
 
                 }

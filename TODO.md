@@ -1,3 +1,10 @@
 - [x] Modify LoanDisbursementScreen.kt to show full screen customer list with search when no customer selected
 - [x] Hide customer list and search when customer is selected, show customer details in top sheet and loan disbursement form
 - [x] Test the UI flow: full screen list -> select customer -> hide list, show details + form
+- [x] Create BackupCard.kt composable with backup and restore buttons
+- [x] Create BackupViewModel.kt for managing backup/restore UI state
+- [x] Create BackupManager.kt for handling backup/restore operations
+- [x] Update DashboardScreen.kt to include BackupCard
+- [x] Update strings.xml with backup-related strings
+- [x] Add file access permissions to AndroidManifest.xml if needed
+- [ ] Test backup and restore functionality

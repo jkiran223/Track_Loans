@@ -47,4 +47,13 @@ interface LoanDao {
 
     @Query("SELECT MAX(loanId) FROM loans")
     suspend fun getMaxLoanId(): Long?
+
+    @Query("SELECT * FROM loans")
+    suspend fun getAllLoansList(): List<Loan>
+
+    @Query("DELETE FROM loans")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(loans: List<Loan>)
 }

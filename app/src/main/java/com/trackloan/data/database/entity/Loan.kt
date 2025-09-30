@@ -6,6 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.trackloan.data.database.converters.EmiType
 import com.trackloan.data.database.converters.LoanStatus
+import java.io.Serializable
 import java.time.LocalDateTime
 
 @Entity(
@@ -38,4 +39,4 @@ data class Loan(
     val emiStartDate: LocalDateTime,
     val status: LoanStatus = LoanStatus.ACTIVE,
     val createdAt: LocalDateTime = LocalDateTime.now()
-)
+) : Serializable

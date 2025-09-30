@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.trackloan.data.database.converters.TransactionStatus
+import java.io.Serializable
 import java.time.LocalDateTime
 
 @Entity(
@@ -32,4 +33,4 @@ data class Transaction(
     val amount: Double,
     val paymentDate: LocalDateTime,
     val status: TransactionStatus
-)
+) : Serializable

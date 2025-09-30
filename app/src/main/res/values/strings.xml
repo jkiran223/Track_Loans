@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Aaditi Finance</string>
+    <string name="backup">Backup</string>
+    <string name="restore">Restore</string>
+    <string name="backup_successful">Backup successful</string>
+    <string name="restore_successful">Restore successful</string>
+    <string name="backup_failed">Backup failed</string>
+    <string name="restore_failed">Restore failed</string>
+    <string name="last_backup">Last Backup: %1$s</string>
 </resources>

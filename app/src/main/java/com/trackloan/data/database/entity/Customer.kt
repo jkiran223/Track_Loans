@@ -3,6 +3,7 @@ package com.trackloan.data.database.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.io.Serializable
 
 @Entity(
     tableName = "customers",
@@ -17,4 +18,4 @@ data class Customer(
     val name: String,
     val mobileNumber: String? = null,
     val address: String? = null
-)
+) : Serializable

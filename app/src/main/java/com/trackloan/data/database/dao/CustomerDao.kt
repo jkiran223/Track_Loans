@@ -31,4 +31,13 @@ interface CustomerDao {
 
     @Query("SELECT COUNT(*) FROM customers")
     suspend fun getCustomerCount(): Int
+
+    @Query("SELECT * FROM customers")
+    suspend fun getAllCustomersList(): List<Customer>
+
+    @Query("DELETE FROM customers")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(customers: List<Customer>)
 }

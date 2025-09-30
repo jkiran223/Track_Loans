@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.trackloan.ui.navigation.NavRoutes
+import com.trackloan.ui.screen.BackupRestoreScreen
 import com.trackloan.ui.screen.DashboardScreen
 import com.trackloan.ui.screen.customer.CustomerDetailScreen
 import com.trackloan.ui.screen.customer.CustomerListScreen
@@ -102,6 +103,10 @@ fun TrackLoanNavHost() {
 
             composable(NavRoutes.TransactionFlow.route) {
                 TransactionFlowScreen(navController = navController)
+            }
+
+            composable(NavRoutes.BackupRestore.route) {
+                BackupRestoreScreen(navController = navController)
             }
         }
     }

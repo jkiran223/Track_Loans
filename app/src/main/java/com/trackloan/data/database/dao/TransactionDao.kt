@@ -53,4 +53,13 @@ interface TransactionDao {
 
     @Query("SELECT MAX(id) FROM transactions")
     suspend fun getMaxTransactionId(): Long?
+
+    @Query("SELECT * FROM transactions")
+    suspend fun getAllTransactionsList(): List<Transaction>
+
+    @Query("DELETE FROM transactions")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(transactions: List<Transaction>)
 }

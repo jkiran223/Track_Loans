@@ -14,4 +14,5 @@ sealed class NavRoutes(val route: String) {
         fun createRoute(loanId: Long) = "emi_list/$loanId"
     }
     data object LoanDisbursement : NavRoutes("loan_disbursement")
+    data object BackupRestore : NavRoutes("backup_restore")
 }
