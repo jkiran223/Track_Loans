@@ -108,6 +108,22 @@ fun LoanDisbursementScreen(
                     onClose = { viewModel.clearSelectedCustomer() }
                 )
 
+                // Loan Summary Section
+                val formData by viewModel.formData.collectAsState()
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    Text(
+                        text = "Repayable Amount: ₹${formData.repayableAmount}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "EMI Type: Weekly",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
                 LoanDisbursementForm(
                     viewModel = viewModel,
                     isFormValid = isFormValid,
@@ -184,12 +200,12 @@ private fun CustomerSearchSection(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
                     Icon(
                         Icons.Default.PersonAdd,
                         contentDescription = "Add Customer",
@@ -272,7 +288,7 @@ private fun CustomerDetailsStickySheet(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -283,10 +299,7 @@ private fun CustomerDetailsStickySheet(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     customer.mobileNumber?.let { mobile ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -412,45 +425,6 @@ private fun LoanDisbursementForm(
                     }
                 }
             }
-        }
-
-        // Repayable Amount (Auto-calculated)
-        item {
-            OutlinedTextField(
-                value = formData.repayableAmount,
-                onValueChange = {},
-                label = { Text("Repayable Amount") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = {
-                    Text("₹", style = MaterialTheme.typography.bodyLarge)
-                },
-                readOnly = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            )
-        }
-
-        // EMI Type (Non-editable)
-        item {
-            OutlinedTextField(
-                value = "Weekly",
-                onValueChange = {},
-                label = { Text("EMI Type") },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            )
         }
 
         // EMI Start Date

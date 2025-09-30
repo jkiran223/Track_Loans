@@ -1,17 +1,9 @@
-# Fix Transaction Screen Default Filter Issue
+# TODO: Update Loan Disbursement Screen
 
-## Problem
-On the transaction screen, the default selected filter is "Due Today" but no customer list is visible until the user changes the filter to another value and then comes back to "Due Today."
+## Tasks
+- [x] Add Repayable Amount and EMI Type as plain Text composables below the top sheet (CustomerDetailsStickySheet)
+- [x] Remove Repayable Amount OutlinedTextField from the form LazyColumn
+- [x] Remove EMI Type OutlinedTextField from the form LazyColumn
 
-## Root Cause
-The filtering logic depends on loan data to determine customers with EMIs due today, but this data is loaded asynchronously after the initial filter application in the ViewModel.
-
-## Solution
-Modify TransactionFlowViewModel.kt to ensure applyCustomerFilter() is called after the loans data is loaded.
-
-## Steps
-- [x] Modify loadAllLoansAndTransactions() in TransactionFlowViewModel.kt to call applyCustomerFilter() when loans are collected.
-- [x] Test the fix by navigating from dashboard loan card to transaction screen.
-
-## Status
-Completed
+## File to Edit
+- app/src/main/java/com/trackloan/ui/screen/loan/LoanDisbursementScreen.kt
