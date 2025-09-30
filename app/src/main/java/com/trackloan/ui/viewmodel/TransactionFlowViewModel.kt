@@ -103,6 +103,8 @@ class TransactionFlowViewModel @Inject constructor(
             try {
                 loanRepository.observeAllLoans().collect { loanList ->
                     _allLoans.value = loanList
+                    // Apply customer filter after loans are loaded to ensure DUE_TODAY filter works on initial load
+                    applyCustomerFilter()
                 }
             } catch (e: Exception) {
                 // Handle error if needed

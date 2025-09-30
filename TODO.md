@@ -1,10 +1,17 @@
-- [x] Modify LoanDisbursementScreen.kt to show full screen customer list with search when no customer selected
-- [x] Hide customer list and search when customer is selected, show customer details in top sheet and loan disbursement form
-- [x] Test the UI flow: full screen list -> select customer -> hide list, show details + form
-- [x] Create BackupCard.kt composable with backup and restore buttons
-- [x] Create BackupViewModel.kt for managing backup/restore UI state
-- [x] Create BackupManager.kt for handling backup/restore operations
-- [x] Update DashboardScreen.kt to include BackupCard
-- [x] Update strings.xml with backup-related strings
-- [x] Add file access permissions to AndroidManifest.xml if needed
-- [ ] Test backup and restore functionality
+# Fix Transaction Screen Default Filter Issue
+
+## Problem
+On the transaction screen, the default selected filter is "Due Today" but no customer list is visible until the user changes the filter to another value and then comes back to "Due Today."
+
+## Root Cause
+The filtering logic depends on loan data to determine customers with EMIs due today, but this data is loaded asynchronously after the initial filter application in the ViewModel.
+
+## Solution
+Modify TransactionFlowViewModel.kt to ensure applyCustomerFilter() is called after the loans data is loaded.
+
+## Steps
+- [x] Modify loadAllLoansAndTransactions() in TransactionFlowViewModel.kt to call applyCustomerFilter() when loans are collected.
+- [x] Test the fix by navigating from dashboard loan card to transaction screen.
+
+## Status
+Completed
